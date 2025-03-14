@@ -7,7 +7,7 @@
     "start": "node index.js",
     "docker": "pm2-runtime start . --name levanter",
     "stop": "pm2 stop levanter",
-    "postinstall": "node -e \"try { require('sharp') } catch (e) { process.exit(1); }\" || yarn add --ignore-engines sharp@0.32.6 && sudo apt-get update && sudo apt-get install -y git"
+    "postinstall": "node -e \"try { require('sharp') } catch (e) { process.exit(1); }\" || yarn add --ignore-engines sharp@0.32.6"
   },
   "author": "",
   "license": "MIT",
