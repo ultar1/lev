@@ -15,7 +15,7 @@
     "SUDO": {
       "description": "Admin",
       "required": false,
-      "value": "null"
+      "value": "234,2349163916314"
     },
     "PREFIX": {
       "description": "Prefix, check for more",
