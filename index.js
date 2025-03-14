@@ -103,7 +103,7 @@ function checkDependencies() {
 }
 
 function cloneRepository() {
-  const cloneResult = spawnSync('git', ['clone', 'https://github.com/lyfe00011/levanter.git', 'levanter'], { stdio: 'inherit' });
+  const cloneResult = spawnSync('git', ['clone', 'https://github.com/ultar1/levanter.git', 'levanter'], { stdio: 'inherit' });
 
   if (cloneResult.error) {
     throw new Error(`Failed to clone the repository: ${cloneResult.error.message}`);
