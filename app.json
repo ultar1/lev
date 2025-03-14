@@ -42,6 +42,9 @@
       "required": false,
       "value": "en"
     },
+      "TZ": { "description": "Time Zone", 
+      "required": false, "value": "Africa/Lagos"
+    },
     "WARN_LIMIT": {
       "description": "Maximum number of warnings to a person.",
       "required": false,
