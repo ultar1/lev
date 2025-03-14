@@ -125,7 +125,7 @@
     "AUTO_STATUS_EMOJI": {
       "description": "Emoji for auto status updates",
       "required": false,
-      "value": ""
+      "value": "false"
     }
   },
   "addons": [
