@@ -30,7 +30,7 @@
     "STICKER_PACKNAME": {
       "description": "Sticker pack info",
       "required": false,
-      "value": "❤️,LyFE"
+      "value": "𝖀𝖑𝖙-𝕬𝕽"
     },
     "RMBG_KEY": {
       "description": "API key from remove.bg, required for plugin rmbg",
