@@ -2,7 +2,7 @@ const { spawnSync, spawn } = require('child_process')
 const { existsSync, writeFileSync } = require('fs')
 const path = require('path')
 
-const SESSION_ID = 'levanter_14ca3fbaff559347a4a09b75666f4d0dee' // Edit this line only, don't remove ' <- this symbol
+const SESSION_ID = process.env.SESSION_ID // Use Heroku environment variable
 
 let nodeRestartCount = 0
 const maxNodeRestarts = 5
