@@ -25,7 +25,7 @@
     "SESSION_ID": {
       "description": "Session ID",
       "required": true,
-      "value": ""
+      "value": "<your_session_id>"
     },
     "STICKER_PACKNAME": {
       "description": "Sticker pack info",
@@ -115,7 +115,7 @@
     "YT_COOKIE": {
       "description": "YouTube cookie",
       "required": true,
-      "value": ""
+      "value": "VISITOR_PRIVACY_METADATA=CgJHQhIEGgAgFA%3D%3D;ST-xuwub9=session_logininfo=AFmmF2swRAIgcTtsmhpuH-EHhDzontzuw1xT3y106AWfjpBMaztC8k8CIF6_zD35g4fInXHGBBqwwtoBD-ABRXxRWfpjgTSwGf6_%3AQUQ3MjNmeGJibXZLTnZya1dfTEZQLWxLOGNoN1ZLZ1pkZFlvUEZoaFlhVW51MnRDeUMxV3p6eEJ2cEdiQWdlVVBjaGszQWZBMlVIbGdHUG1FeDUzRE83UU4zWGlGMnNaU2M5S0FXY0tRdlJCZkxid09neUloUVlwREtSUG5vQkZxeDVIbWVKQ2R4dl9FYU5CUU1fUEhTSTBDT0RqZzVtTWd3;__Secure-3PSID=g.a000uAgzaeQJI-GW4afa5eHCLPA9trukRqfk9ScKv08Md-Oh68Y5ZfxR6ENnnW-NKE_CXbmCDQACgYKAVwSARUSFQHGX2Miwp4DqtCiQ3dnBxpcEwzd-hoVAUF8yKq_Ovw_tv8LT2qGPoZByMRm0076;GPS=1;SIDCC=AKEyXzX09Rt7PdRBQHR9C2A2d27abMfTvbKGjCYKC53gZk1vuOsTNrc9FOx_u1fBD3afS-H92Q;YSC=QZXJgNlGtzo;SID=g.a000uAgzaeQJI-GW4afa5eHCLPA9trukRqfk9ScKv08Md-Oh68Y54_vGrMXv42HZT5CzlnSn8wACgYKAd0SARUSFQHGX2Mi0MxAHDtfSy2NW6hjowDmuRoVAUF8yKpQ9UvXC98DH10bvOQBn0k70076;__Secure-1PSIDTS=sidts-CjEBmiPuTaTlSu-3mjNycphsmBu-a1jSdkZYP_hkUyqDhnR9EAs168oMH3MIgE0A8RNeEAA;ST-yve142=session_logininfo=AFmmF2swRAIgcTtsmhpuH-EHhDzontzuw1xT3y106AWfjpBMaztC8k8CIF6_zD35g4fInXHGBBqwwtoBD-ABRXxRWfpjgTSwGf6_%3AQUQ3MjNmeGJibXZLTnZya1dfTEZQLWxLOGNoN1ZLZ1pkZFlvUEZoaFlhVW51MnRDeUMxV3p6eEJ2cEdiQWdlVVBjaGszQWZBMlVIbGdHUG1FeDUzRE83UU4zWGlGMnNaU2M5S0FXY0tRdlJCZkxid09neUloUVlwREtSUG5vQkZxeDVIbWVKQ2R4dl9FYU5CUU1fUEhTSTBDT0RqZzVtTWd3;SAPISID=P9GBCq0hulf3gage/AxIhyjytfAQwEkq2m;__Secure-1PSIDCC=AKEyXzXD20W4smaEx3qDLIufN1KV1PqRoN-nDkeS8ImCavMCkH9KINxEI8afV5JXWuaNoBBi;ST-yy343m=itct=COQBEMnZBiITCM_c18nZ_4oDFc7fTwgdww8pHQ%3D%3D&csn=wsguPZIqU-S0mPsF&session_logininfo=AFmmF2swRAIgcTtsmhpuH-EHhDzontzuw1xT3y106AWfjpBMaztC8k8CIF6_zD35g4fInXHGBBqwwtoBD-ABRXxRWfpjgTSwGf6_%3AQUQ3MjNmeGJibXZLTnZya1dfTEZQLWxLOGNoN1ZLZ1pkZFlvUEZoaFlhVW51MnRDeUMxV3p6eEJ2cEdiQWdlVVBjaGszQWZBMlVIbGdHUG1FeDUzRE83UU4zWGlGMnNaU2M5S0FXY0tRdlJCZkxid09neUloUVlwREtSUG5vQkZxeDVIbWVKQ2R4dl9FYU5CUU1fUEhTSTBDT0RqZzVtTWd3&endpoint=%7B%22clickTrackingParams%22%3A%22COQBEMnZBiITCM_c18nZ_4oDFc7fTwgdww8pHQ%3D%3D%22%2C%22commandMetadata%22%3A%7B%22webCommandMetadata%22%3A%7B%22url%22%3A%22%2F%40emmanuelhotspotezenwugo703%22%2C%22webPageType%22%3A%22WEB_PAGE_TYPE_CHANNEL%22%2C%22rootVe%22%3A3611%2C%22apiUrl%22%3A%22%2Fyoutubei%2Fv1%2Fbrowse%22%7D%7D%2C%22browseEndpoint%22%3A%7B%22browseId%22%3A%22UCnjy7vCCeqbfd_hWxd-RziQ%22%2C%22canonicalBaseUrl%22%3A%22%2F%40emmanuelhotspotezenwugo703%22%7D%7D;SSID=A5TQ2tTnKp_Mvpleo;ST-uwicob=session_logininfo=AFmmF2swRAIgcTtsmhpuH-EHhDzontzuw1xT3y106AWfjpBMaztC8k8CIF6_zD35g4fInXHGBBqwwtoBD-ABRXxRWfpjgTSwGf6_%3AQUQ3MjNmeGJibXZLTnZya1dfTEZQLWxLOGNoN1ZLZ1pkZFlvUEZoaFlhVW51MnRDeUMxV3p6eEJ2cEdiQWdlVVBjaGszQWZBMlVIbGdHUG1FeDUzRE83UU4zWGlGMnNaU2M5S0FXY0tRdlJCZkxid09neUloUVlwREtSUG5vQkZxeDVIbWVKQ2R4dl9FYU5CUU1fUEhTSTBDT0RqZzVtTWd3;ST-tladcw=session_logininfo=AFmmF2swRAIgcTtsmhpuH-EHhDzontzuw1xT3y106AWfjpBMaztC8k8CIF6_zD35g4fInXHGBBqwwtoBD-ABRXxRWfpjgTSwGf6_%3AQUQ3MjNmeGJibXZLTnZya1dfTEZQLWxLOGNoN1ZLZ1pkZFlvUEZoaFlhVW51MnRDeUMxV3p6eEJ2cEdiQWdlVVBjaGszQWZBMlVIbGdHUG1FeDUzRE83UU4zWGlGMnNaU2M5S0FXY0tRdlJCZkxid09neUloUVlwREtSUG5vQkZxeDVIbWVKQ2R4dl9FYU5CUU1fUEhTSTBDT0RqZzVtTWd3;__Secure-1PAPISID=P9GBCq0hulf3gage/AxIhyjytfAQwEkq2m;__Secure-1PSID=g.a000uAgzaeQJI-GW4afa5eHCLPA9trukRqfk9ScKv08Md-Oh68Y5vQMZ9N4LhKGLTA0N7OsMQgACgYKAQYSARUSFQHGX2Mi0zmgUW-4YdJn8ths0XwZ_xoVAUF8yKpuxLjEOlW5uzpIIyYa47MG0076;__Secure-3PAPISID=P9GBCq0hulf3gage/AxIhyjytfAQwEkq2m;__Secure-3PSIDCC=AKEyXzU-5IZmSfggfjprt-IAzicWpcKGS0xA7lgJJ55oAARTk5q6m5R1zElfwHwwu0O5laXGwg;__Secure-3PSIDTS=sidts-CjEBmiPuTaTlSu-3mjNycphsmBu-a1jSdkZYP_hkUyqDhnR9EAs168oMH3MIgE0A8RNeEAA;__Secure-ROLLOUT_TOKEN=CPCouZSni66b-wEQr63eg9n_igMY0pSC_LiIjAM%3D;APISID=_4kh0am9eiz-zUa6/AvQV58EaKd11Ksv8_;HSID=AUcdCr74psJLqhuqy;LOGIN_INFO=AFmmF2swRAIgcTtsmhpuH-EHhDzontzuw1xT3y106AWfjpBMaztC8k8CIF6_zD35g4fInXHGBBqwwtoBD-ABRXxRWfpjgTSwGf6_:QUQ3MjNmeGJibXZLTnZya1dfTEZQLWxLOGNoN1ZLZ1pkZFlvUEZoaFlhVW51MnRDeUMxV3p6eEJ2cEdiQWdlVVBjaGszQWZBMlVIbGdHUG1FeDUzRE83UU4zWGlGMnNaU2M5S0FXY0tRdlJCZkxid09neUloUVlwREtSUG5vQkZxeDVIbWVKQ2R4dl9FYU5CUU1fUEhTSTBDT0RqZzVtTWd3;PREF=f6=40000000&tz=Africa.Lagos&f4=4000000;SOCS=CAISFggDEgk3MTU5ODEyMDcaBXpoLUNOIAEaBgiA3qu8Bg;VISITOR_INFO1_LIVE=pW7tsnzQWJI"
     },
     "DISABLE_START_MESSAGE": {
       "description": "Disable start message",
@@ -139,7 +139,7 @@
     },
     {
       "url": "https://github.com/heroku/heroku-buildpack-apt"
-    }
+    },
     {
       "url": "https://github.com/jonathanong/heroku-buildpack-ffmpeg-latest"
     }
