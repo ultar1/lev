@@ -125,10 +125,10 @@
       "required": false,
       "value": "false"
     },
-    "AUTO_STATUS_EMOJI": {
+    "STATUS_VIEW_EMOJI": {
       "description": "Emoji for auto status updates",
       "required": false,
-      "value": "false"
+      "value": ""
     }
   },
   "addons": [
