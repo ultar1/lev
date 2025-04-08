@@ -25,7 +25,7 @@
     "DISABLE_BOT": {
       "description": "Example: jid,jid,... where bot does not work in both ways.",
       "required": false,
-      "value": "2349163916314@s.whatsapp.net"
+      "value": ""
     },  
     "SESSION_ID": {
       "description": "Session ID",
