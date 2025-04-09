@@ -22,10 +22,10 @@
       "required": false,
       "value": "."
     },
-    "DISABLE_BOT": {
-      "description": "Example: jid,jid,... where bot does not work in both ways.",
+    "LIST_TYPE": {
+      "description": "Example: jid,jid,...",
       "required": false,
-      "value": ""
+      "value": "poll"
     },  
     "SESSION_ID": {
       "description": "Session ID",
