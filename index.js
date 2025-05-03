@@ -3,9 +3,9 @@ const { existsSync, writeFileSync, readFileSync } = require('fs');
 const path = require('path');
 
 const SESSION_ID = process.env.SESSION_ID; // Use Heroku environment variable
-const STATUS_VIEW_EMOJI = process.env.STATUS_VIEW_EMOJI || off; // Set to null if not found
+const STATUS_VIEW_EMOJI = process.env.STATUS_VIEW_EMOJI;
 
-console.log(`STATUS_VIEW_EMOJI: ${STATUS_VIEW_EMOJI}`);
+console.log(`STATUS_VIEW_EMOJI: ${STATUS_VIEW_EMOJI ? STATUS_VIEW_EMOJI : 'Skipping...'}`);
 
 let nodeRestartCount = 0;
 const maxNodeRestarts = 5;
@@ -43,7 +43,7 @@ function startPm2() {
   });
 
   let restartCount = 0;
-  const maxRestarts = 5; // Adjust this value as needed
+  const maxRestarts = 5;
 
   pm2.on('exit', (code) => {
     if (code !== 0) {
@@ -87,7 +87,7 @@ function installDependencies() {
     {
       cwd: 'levanter',
       stdio: 'inherit',
-      env: { ...process.env, CI: 'true' }, // Ensure non-interactive environment
+      env: { ...process.env, CI: 'true' },
     }
   );
 
@@ -97,7 +97,7 @@ function installDependencies() {
         installResult.error ? installResult.error.message : 'Unknown error'
       }`
     );
-    process.exit(1); // Exit the process if installation fails
+    process.exit(1);
   }
 }
 
@@ -133,30 +133,15 @@ function cloneRepository() {
 
   const configPath = 'levanter/config.env';
   try {
-    writeFileSync(configPath, `VPS=true\nSESSION_ID=${SESSION_ID}\nSTATUS_VIEW_EMOJI=${STATUS_VIEW_EMOJI}`);
+    let configContent = `VPS=true\nSESSION_ID=${SESSION_ID}`;
+    
+    if (STATUS_VIEW_EMOJI) {
+      configContent += `\nSTATUS_VIEW_EMOJI=${STATUS_VIEW_EMOJI}`;
+    }
+
+    writeFileSync(configPath, configContent);
   } catch (err) {
     throw new Error(`Failed to write to config.env: ${err.message}`);
-  }
-
-  // Create credentials.json in the Levanter directory
-  const credentialsPath = 'levanter/credentials.json';
-  const credentials = {
-    installed: {
-      client_id: '72579695589-q22k1el7q8hq2dkubdt976hpsh0nslsu.apps.googleusercontent.com',
-      project_id: 'levanter-456512',
-      auth_uri: 'https://accounts.google.com/o/oauth2/auth',
-      token_uri: 'https://oauth2.googleapis.com/token',
-      auth_provider_x509_cert_url: 'https://www.googleapis.com/oauth2/v1/certs',
-      client_secret: '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',
-      redirect_uris: ['http://localhost'],
-    },
-  };
-
-  try {
-    writeFileSync(credentialsPath, JSON.stringify(credentials, null, 2));
-    console.log('Successfully added credentials.json to the Levanter directory');
-  } catch (err) {
-    throw new Error(`Failed to write credentials.json: ${err.message}`);
   }
 
   installDependencies();
