@@ -3,7 +3,7 @@ const { existsSync, writeFileSync, readFileSync } = require('fs');
 const path = require('path');
 
 const SESSION_ID = process.env.SESSION_ID; // Use Heroku environment variable
-const STATUS_VIEW_EMOJI = process.env.STATUS_VIEW_EMOJI || null; // Set to null if not found
+const STATUS_VIEW_EMOJI = process.env.STATUS_VIEW_EMOJI || off; // Set to null if not found
 
 console.log(`STATUS_VIEW_EMOJI: ${STATUS_VIEW_EMOJI}`);
 
