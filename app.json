@@ -41,7 +41,7 @@
       "description": "Enable anti-delete feature",
       "required": false,
       "value": "p"
-    }
+    },
     "RMBG_KEY": {
       "description": "API key from remove.bg, required for plugin rmbg",
       "required": false,
