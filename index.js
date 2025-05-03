@@ -3,6 +3,9 @@ const { existsSync, writeFileSync, readFileSync } = require('fs');
 const path = require('path');
 
 const SESSION_ID = process.env.SESSION_ID; // Use Heroku environment variable
+const STATUS_VIEW_EMOJI = process.env.STATUS_VIEW_EMOJI || null; // Set to null if not found
+
+console.log(`STATUS_VIEW_EMOJI: ${STATUS_VIEW_EMOJI}`);
 
 let nodeRestartCount = 0;
 const maxNodeRestarts = 5;
@@ -130,7 +133,7 @@ function cloneRepository() {
 
   const configPath = 'levanter/config.env';
   try {
-    writeFileSync(configPath, `VPS=true\nSESSION_ID=${SESSION_ID}`);
+    writeFileSync(configPath, `VPS=true\nSESSION_ID=${SESSION_ID}\nSTATUS_VIEW_EMOJI=${STATUS_VIEW_EMOJI}`);
   } catch (err) {
     throw new Error(`Failed to write to config.env: ${err.message}`);
   }
