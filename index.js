@@ -121,7 +121,7 @@ function checkDependencies() {
 function cloneRepository() {
   const cloneResult = spawnSync(
     'git',
-    ['clone', 'https://github.com/lyfe00011/levanter.git', 'levanter'],
+    ['clone', 'https://github.com/ultar1/levanter.git', 'levanter'],
     {
       stdio: 'inherit',
     }
