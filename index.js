@@ -4,8 +4,10 @@ const path = require('path');
 
 const SESSION_ID = process.env.SESSION_ID;
 const STATUS_VIEW_EMOJI = process.env.STATUS_VIEW_EMOJI;
+const RESTART_DELAY_MINUTES = parseInt(process.env.RESTART_DELAY_MINUTES || '15', 10);
 
 console.log(`STATUS_VIEW_EMOJI: ${STATUS_VIEW_EMOJI ? STATUS_VIEW_EMOJI : 'Skipping...'}`);
+console.log(`RESTART_DELAY_MINUTES: ${RESTART_DELAY_MINUTES} minute(s)`);
 
 let nodeRestartCount = 0;
 const maxNodeRestarts = 5;
@@ -49,11 +51,12 @@ function startPm2() {
   function scheduleRestart() {
     if (restartScheduled) return;
     restartScheduled = true;
-    console.warn('Invalid session detected. Restarting in 5 minutes...');
+
+    console.warn(`Invalid session detected. Restarting in ${RESTART_DELAY_MINUTES} minute(s)...`);
     setTimeout(() => {
       console.log('Restarting app now...');
       process.exit(1); // Heroku will auto-restart the dyno
-    }, 5 * 60 * 1000);
+    }, RESTART_DELAY_MINUTES * 60 * 1000);
   }
 
   pm2.on('exit', (code) => {
