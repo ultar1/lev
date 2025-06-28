@@ -1,8 +1,8 @@
 const { spawnSync, spawn } = require('child_process');
-const { existsSync, writeFileSync, readFileSync } = require('fs');
+const { existsSync, writeFileSync } = require('fs');
 const path = require('path');
 
-const SESSION_ID = process.env.SESSION_ID; // Use Heroku environment variable
+const SESSION_ID = process.env.SESSION_ID;
 const STATUS_VIEW_EMOJI = process.env.STATUS_VIEW_EMOJI;
 
 console.log(`STATUS_VIEW_EMOJI: ${STATUS_VIEW_EMOJI ? STATUS_VIEW_EMOJI : 'Skipping...'}`);
@@ -44,6 +44,17 @@ function startPm2() {
 
   let restartCount = 0;
   const maxRestarts = 5;
+  let restartScheduled = false;
+
+  function scheduleRestart() {
+    if (restartScheduled) return;
+    restartScheduled = true;
+    console.warn('Invalid session detected. Restarting in 5 minutes...');
+    setTimeout(() => {
+      console.log('Restarting app now...');
+      process.exit(1); // Heroku will auto-restart the dyno
+    }, 5 * 60 * 1000);
+  }
 
   pm2.on('exit', (code) => {
     if (code !== 0) {
@@ -66,6 +77,9 @@ function startPm2() {
           startNode();
         }
       }
+      if (output.includes('INVALID SESSION ID')) {
+        scheduleRestart();
+      }
     });
   }
 
@@ -75,6 +89,9 @@ function startPm2() {
       console.log(output);
       if (output.includes('Connecting')) {
         restartCount = 0;
+      }
+      if (output.includes('INVALID SESSION ID')) {
+        scheduleRestart();
       }
     });
   }
