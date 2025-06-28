@@ -16,7 +16,7 @@
       "description": "Delay in minutes before restarting on invalid session",
       "required": false,
       "value": ""
-    }
+    },
     "SUDO": {
       "description": "Admin",
       "required": false,
