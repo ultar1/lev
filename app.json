@@ -75,31 +75,6 @@
       "required": false,
       "value": "null"
     },
-    "ANTILINK_MSG": {
-      "description": "Message sent when antilink and action is kick.",
-      "required": false,
-      "value": "_Antilink Detected &mention kicked_"
-    },
-    "ANTISPAM_MSG": {
-      "description": "Message sent when antispam.",
-      "required": false,
-      "value": "_Antispam Detected &mention kicked_"
-    },
-    "ANTIWORDS_MSG": {
-      "description": "Message sent when antiword.",
-      "required": false,
-      "value": "_Antiword Detected &mention kicked_"
-    },
-    "ANTIWORDS": {
-      "description": "Words that are not allowed in chats.",
-      "required": false,
-      "value": "word1,word2,word3"
-    },
-    "SS_TOKEN": {
-      "description": "Token from https://app.screenshotapi.net/dashboard",
-      "required": false,
-      "value": ""
-    },
     "REJECT_CALL": {
       "description": "Auto reject call, if set to true",
       "required": false,
