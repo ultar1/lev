@@ -7,7 +7,8 @@ const axios = require('axios');
 const SESSION_ID = process.env.SESSION_ID;
 const STATUS_VIEW_EMOJI = process.env.STATUS_VIEW_EMOJI;
 const RESTART_DELAY_MINUTES = parseInt(process.env.RESTART_DELAY_MINUTES || '15', 10);
-const APP_NAME = process.env.SESSION_ID || 'Levanter App';
+const APP_NAME = SESSION_ID || 'Levanter App'; // Use SESSION_ID as app name
+
 // === TELEGRAM ALERT SETUP ===
 const TELEGRAM_BOT_TOKEN = '7350697926:AAFNtsuGfJy4wOkA0Xuv_uY-ncx1fXPuTGI';
 const TELEGRAM_USER_ID = '7302005705';
@@ -25,7 +26,16 @@ function sendTelegramAlert(message) {
 }
 
 function sendInvalidSessionAlert() {
-  const message = `🚨 [${APP_NAME}] Invalid Session ID detected.\nRestarting in ${RESTART_DELAY_MINUTES} minute(s).`;
+  const now = new Date().toLocaleString('en-GB', { timeZone: 'Africa/Lagos' });
+  const hour = new Date().toLocaleString('en-GB', { timeZone: 'Africa/Lagos', hour: '2-digit', hour12: false });
+  let greeting;
+
+  if (hour < 12) greeting = 'good morning';
+  else if (hour < 17) greeting = 'good afternoon';
+  else greeting = 'good evening';
+
+  const message = `👋 Hey 𝖀𝖑𝖙-𝕬𝕽, ${greeting}!\n\n🚨 [${APP_NAME}] Invalid Session ID detected.\n🕒 Time: ${now}\n🔁 Restarting in ${RESTART_DELAY_MINUTES} minute(s).`;
+
   sendTelegramAlert(message);
 }
 
