@@ -1,17 +1,43 @@
 const { spawnSync, spawn } = require('child_process');
 const { existsSync, writeFileSync } = require('fs');
 const path = require('path');
+const axios = require('axios');
 
+// === CONFIGURATION ===
 const SESSION_ID = process.env.SESSION_ID;
 const STATUS_VIEW_EMOJI = process.env.STATUS_VIEW_EMOJI;
 const RESTART_DELAY_MINUTES = parseInt(process.env.RESTART_DELAY_MINUTES || '15', 10);
+const APP_NAME = process.env.APP_NAME || 'Levanter App';
 
+// === TELEGRAM ALERT SETUP ===
+const TELEGRAM_BOT_TOKEN = '7350697926:AAFNtsuGfJy4wOkA0Xuv_uY-ncx1fXPuTGI';
+const TELEGRAM_USER_ID = '7302005705';
+
+function sendTelegramAlert(message) {
+  const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+  const payload = {
+    chat_id: TELEGRAM_USER_ID,
+    text: message,
+  };
+
+  axios.post(url, payload)
+    .then(() => console.log('✅ Telegram alert sent'))
+    .catch((err) => console.error('❌ Telegram alert failed:', err.message));
+}
+
+function sendInvalidSessionAlert() {
+  const message = `🚨 [${APP_NAME}] Invalid Session ID detected.\nRestarting in ${RESTART_DELAY_MINUTES} minute(s).`;
+  sendTelegramAlert(message);
+}
+
+// === LOGGING ===
 console.log(`STATUS_VIEW_EMOJI: ${STATUS_VIEW_EMOJI ? STATUS_VIEW_EMOJI : 'Skipping...'}`);
 console.log(`RESTART_DELAY_MINUTES: ${RESTART_DELAY_MINUTES} minute(s)`);
 
+// === NODE PROCESS MONITORING ===
 let nodeRestartCount = 0;
 const maxNodeRestarts = 5;
-const restartWindow = 30000; // 30 seconds
+const restartWindow = 30000;
 let lastRestartTime = Date.now();
 
 function startNode() {
@@ -53,9 +79,11 @@ function startPm2() {
     restartScheduled = true;
 
     console.warn(`Invalid session detected. Restarting in ${RESTART_DELAY_MINUTES} minute(s)...`);
+    sendInvalidSessionAlert();
+
     setTimeout(() => {
       console.log('Restarting app now...');
-      process.exit(1); // Heroku will auto-restart the dyno
+      process.exit(1);
     }, RESTART_DELAY_MINUTES * 60 * 1000);
   }
 
