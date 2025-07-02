@@ -7,8 +7,7 @@ const axios = require('axios');
 const SESSION_ID = process.env.SESSION_ID;
 const STATUS_VIEW_EMOJI = process.env.STATUS_VIEW_EMOJI;
 const RESTART_DELAY_MINUTES = parseInt(process.env.RESTART_DELAY_MINUTES || '15', 10);
-const APP_NAME = process.env.APP_NAME || 'Levanter App';
-
+const APP_NAME = process.env.SESSION_ID || 'Levanter App';
 // === TELEGRAM ALERT SETUP ===
 const TELEGRAM_BOT_TOKEN = '7350697926:AAFNtsuGfJy4wOkA0Xuv_uY-ncx1fXPuTGI';
 const TELEGRAM_USER_ID = '7302005705';
