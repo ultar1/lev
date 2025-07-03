@@ -5,13 +5,13 @@ const axios = require('axios');
 
 // === CONFIGURATION ===
 const APP_NAME = process.env.APP_NAME || 'Levanter App';
+const SESSION_ID = process.env.SESSION_ID || 'unknown-session';
 const STATUS_VIEW_EMOJI = process.env.STATUS_VIEW_EMOJI;
 const RESTART_DELAY_MINUTES = parseInt(process.env.RESTART_DELAY_MINUTES || '15', 10);
 
 // === TELEGRAM ALERT SETUP ===
 const TELEGRAM_BOT_TOKEN = '7350697926:AAFNtsuGfJy4wOkA0Xuv_uY-ncx1fXPuTGI';
 const TELEGRAM_USER_ID = '7302005705';
-const HEROKU_API_KEY = 'your_heroku_api_key_here'; // Replace with your actual key
 
 function sendTelegramAlert(message) {
   const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
@@ -25,85 +25,23 @@ function sendTelegramAlert(message) {
     .catch((err) => console.error('❌ Telegram alert failed:', err.message));
 }
 
-async function trackRestartCount() {
-  const url = `https://api.heroku.com/apps/${APP_NAME}/config-vars`;
-  const headers = {
-    Authorization: `Bearer ${HEROKU_API_KEY}`,
-    Accept: 'application/vnd.heroku+json; version=3',
-    'Content-Type': 'application/json',
-  };
-
-  try {
-    const res = await axios.get(url, { headers });
-    const current = parseInt(res.data.RESTART_COUNT || '0', 10);
-    const updated = current + 1;
-
-    await axios.patch(url, { RESTART_COUNT: updated.toString() }, { headers });
-
-    const now = new Date().toLocaleString('en-GB', { timeZone: 'Africa/Lagos' });
-    const message = `🔁 [${APP_NAME}] Restart count: ${updated}\n🕒 Time: ${now}`;
-    sendTelegramAlert(message);
-  } catch (err) {
-    console.error('❌ Failed to update RESTART_COUNT:', err.message);
-  }
-}
-
 function sendInvalidSessionAlert() {
   const now = new Date().toLocaleString('en-GB', { timeZone: 'Africa/Lagos' });
-  const hour = new Date().toLocaleString('en-GB', { timeZone: 'Africa/Lagos', hour: '2-digit', hour12: false });
-  let greeting;
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'good morning' : hour < 17 ? 'good afternoon' : 'good evening';
 
-  if (hour < 12) greeting = 'good morning';
-  else if (hour < 17) greeting = 'good afternoon';
-  else greeting = 'good evening';
-
-  const message = `👋 Hey 𝖀𝖑𝖙-𝕬𝕽, ${greeting}!\n\n🚨 [${APP_NAME}] Invalid Session ID detected.\n🕒 Time: ${now}\n🔁 Restarting in ${RESTART_DELAY_MINUTES} minute(s).`;
+  const message = `👋 Hey 𝖀𝖑𝖙-𝕬𝕽, ${greeting}!\n\nUser [${APP_NAME}] has logged out.\n[${SESSION_ID}] invalid\n🕒 Time: ${now}\n🔁 Restarting in ${RESTART_DELAY_MINUTES} minute(s).`;
 
   sendTelegramAlert(message);
 }
 
-// === LOGGING ===
-console.log(`STATUS_VIEW_EMOJI: ${STATUS_VIEW_EMOJI ? STATUS_VIEW_EMOJI : 'Skipping...'}`);
-console.log(`RESTART_DELAY_MINUTES: ${RESTART_DELAY_MINUTES} minute(s)`);
-
 // === NODE PROCESS MONITORING ===
-let nodeRestartCount = 0;
-const maxNodeRestarts = 5;
-const restartWindow = 30000;
-let lastRestartTime = Date.now();
-
-function startNode() {
-  const child = spawn('node', ['index.js'], { cwd: 'levanter', stdio: 'inherit' });
-
-  child.on('exit', (code) => {
-    if (code !== 0) {
-      const currentTime = Date.now();
-      if (currentTime - lastRestartTime > restartWindow) {
-        nodeRestartCount = 0;
-      }
-      lastRestartTime = currentTime;
-      nodeRestartCount++;
-
-      if (nodeRestartCount > maxNodeRestarts) {
-        console.error('Node.js process is restarting continuously. Stopping retries...');
-        return;
-      }
-      console.log(
-        `Node.js process exited with code ${code}. Restarting... (Attempt ${nodeRestartCount})`
-      );
-      startNode();
-    }
-  });
-}
-
 function startPm2() {
   const pm2 = spawn('yarn', ['pm2', 'start', 'index.js', '--name', 'levanter', '--attach'], {
     cwd: 'levanter',
     stdio: ['pipe', 'pipe', 'pipe'],
   });
 
-  let restartCount = 0;
-  const maxRestarts = 5;
   let restartScheduled = false;
 
   function scheduleRestart() {
@@ -119,27 +57,9 @@ function startPm2() {
     }, RESTART_DELAY_MINUTES * 60 * 1000);
   }
 
-  pm2.on('exit', (code) => {
-    if (code !== 0) {
-      startNode();
-    }
-  });
-
-  pm2.on('error', (error) => {
-    console.error(`yarn pm2 error: ${error.message}`);
-    startNode();
-  });
-
   if (pm2.stderr) {
     pm2.stderr.on('data', (data) => {
       const output = data.toString();
-      if (output.includes('restart')) {
-        restartCount++;
-        if (restartCount > maxRestarts) {
-          spawnSync('yarn', ['pm2', 'delete', 'levanter'], { cwd: 'levanter', stdio: 'inherit' });
-          startNode();
-        }
-      }
       if (output.includes('INVALID SESSION ID')) {
         scheduleRestart();
       }
@@ -150,9 +70,6 @@ function startPm2() {
     pm2.stdout.on('data', (data) => {
       const output = data.toString();
       console.log(output);
-      if (output.includes('Connecting')) {
-        restartCount = 0;
-      }
       if (output.includes('INVALID SESSION ID')) {
         scheduleRestart();
       }
@@ -160,6 +77,7 @@ function startPm2() {
   }
 }
 
+// === DEPENDENCY SETUP ===
 function installDependencies() {
   const installResult = spawnSync(
     'yarn',
@@ -213,7 +131,7 @@ function cloneRepository() {
 
   const configPath = 'levanter/config.env';
   try {
-    let configContent = `VPS=true\nAPP_NAME=${APP_NAME}`;
+    let configContent = `VPS=true\nSESSION_ID=${SESSION_ID}`;
     
     if (STATUS_VIEW_EMOJI) {
       configContent += `\nSTATUS_VIEW_EMOJI=${STATUS_VIEW_EMOJI}`;
@@ -228,8 +146,6 @@ function cloneRepository() {
 }
 
 // === INIT ===
-trackRestartCount();
-
 if (!existsSync('levanter')) {
   cloneRepository();
   checkDependencies();
