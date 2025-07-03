@@ -14,6 +14,8 @@ const HEROKU_API_KEY = process.env.HEROKU_API_KEY;
 const TELEGRAM_BOT_TOKEN = '7350697926:AAFNtsuGfJy4wOkA0Xuv_uY-ncx1fXPuTGI';
 const TELEGRAM_USER_ID = '7302005705';
 
+let lastLogoutMessageId = null;
+
 function sendTelegramAlert(message) {
   const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
   const payload = {
@@ -26,14 +28,32 @@ function sendTelegramAlert(message) {
     .catch((err) => console.error('❌ Telegram alert failed:', err.message));
 }
 
-function sendInvalidSessionAlert() {
+async function sendInvalidSessionAlert() {
   const now = new Date().toLocaleString('en-GB', { timeZone: 'Africa/Lagos' });
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'good morning' : hour < 17 ? 'good afternoon' : 'good evening';
 
   const message = `👋 Hey 𝖀𝖑𝖙-𝕬𝕽, ${greeting}!\n\nUser [${APP_NAME}] has logged out.\n[${SESSION_ID}] invalid\n🕒 Time: ${now}\n🔁 Restarting in ${RESTART_DELAY_MINUTES} minute(s).`;
 
-  sendTelegramAlert(message);
+  try {
+    if (lastLogoutMessageId) {
+      await axios.post(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/deleteMessage`, {
+        chat_id: TELEGRAM_USER_ID,
+        message_id: lastLogoutMessageId,
+      });
+      console.log(`🗑️ Deleted previous logout alert: ${lastLogoutMessageId}`);
+    }
+
+    const res = await axios.post(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+      chat_id: TELEGRAM_USER_ID,
+      text: message,
+    });
+
+    lastLogoutMessageId = res.data.result.message_id;
+    console.log(`✅ Sent new logout alert: ${lastLogoutMessageId}`);
+  } catch (err) {
+    console.error('❌ Failed to send logout alert:', err.message);
+  }
 }
 
 async function trackRestartCount() {
