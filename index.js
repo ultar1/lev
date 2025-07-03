@@ -12,6 +12,7 @@ const RESTART_DELAY_MINUTES = parseInt(process.env.RESTART_DELAY_MINUTES || '15'
 // === TELEGRAM ALERT SETUP ===
 const TELEGRAM_BOT_TOKEN = '7350697926:AAFNtsuGfJy4wOkA0Xuv_uY-ncx1fXPuTGI';
 const TELEGRAM_USER_ID = '7302005705';
+const HEROKU_API_KEY = process.env.HEROKU_API_KEY;
 
 function sendTelegramAlert(message) {
   const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
@@ -33,6 +34,29 @@ function sendInvalidSessionAlert() {
   const message = `👋 Hey 𝖀𝖑𝖙-𝕬𝕽, ${greeting}!\n\nUser [${APP_NAME}] has logged out.\n[${SESSION_ID}] invalid\n🕒 Time: ${now}\n🔁 Restarting in ${RESTART_DELAY_MINUTES} minute(s).`;
 
   sendTelegramAlert(message);
+}
+
+async function trackRestartCount() {
+  const url = `https://api.heroku.com/apps/${APP_NAME}/config-vars`;
+  const headers = {
+    Authorization: `Bearer ${HEROKU_API_KEY}`,
+    Accept: 'application/vnd.heroku+json; version=3',
+    'Content-Type': 'application/json',
+  };
+
+  try {
+    const res = await axios.get(url, { headers });
+    const current = parseInt(res.data.RESTART_COUNT || '0', 10);
+    const updated = current + 1;
+
+    await axios.patch(url, { RESTART_COUNT: updated.toString() }, { headers });
+
+    const now = new Date().toLocaleString('en-GB', { timeZone: 'Africa/Lagos' });
+    const message = `🔁 [${APP_NAME}] Restart count: ${updated}\n🕒 Time: ${now}`;
+    sendTelegramAlert(message);
+  } catch (err) {
+    console.error('❌ Failed to update RESTART_COUNT:', err.message);
+  }
 }
 
 // === NODE PROCESS MONITORING ===
@@ -146,6 +170,8 @@ function cloneRepository() {
 }
 
 // === INIT ===
+trackRestartCount();
+
 if (!existsSync('levanter')) {
   cloneRepository();
   checkDependencies();
