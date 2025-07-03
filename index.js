@@ -2,6 +2,8 @@ const { spawnSync, spawn } = require('child_process');
 const { existsSync, writeFileSync } = require('fs');
 const path = require('path');
 const axios = require('axios');
+const express = require('express');
+const bodyParser = require('body-parser');
 
 // === CONFIGURATION ===
 const APP_NAME = process.env.APP_NAME || 'Levanter App';
@@ -10,20 +12,17 @@ const STATUS_VIEW_EMOJI = process.env.STATUS_VIEW_EMOJI;
 const RESTART_DELAY_MINUTES = parseInt(process.env.RESTART_DELAY_MINUTES || '15', 10);
 const HEROKU_API_KEY = process.env.HEROKU_API_KEY;
 
-// === TELEGRAM ALERT SETUP ===
+// === TELEGRAM SETUP ===
 const TELEGRAM_BOT_TOKEN = '7350697926:AAFNtsuGfJy4wOkA0Xuv_uY-ncx1fXPuTGI';
 const TELEGRAM_USER_ID = '7302005705';
+const TELEGRAM_API = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}`;
 
+// === TELEGRAM ALERT ===
 function sendTelegramAlert(message) {
-  const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
-  const payload = {
+  return axios.post(`${TELEGRAM_API}/sendMessage`, {
     chat_id: TELEGRAM_USER_ID,
     text: message,
-  };
-
-  axios.post(url, payload)
-    .then(() => console.log('✅ Telegram alert sent'))
-    .catch((err) => console.error('❌ Telegram alert failed:', err.message));
+  });
 }
 
 function sendInvalidSessionAlert() {
@@ -32,11 +31,10 @@ function sendInvalidSessionAlert() {
   const greeting = hour < 12 ? 'good morning' : hour < 17 ? 'good afternoon' : 'good evening';
 
   const message = `👋 Hey 𝖀𝖑𝖙-𝕬𝕽, ${greeting}!\n\nUser [${APP_NAME}] has logged out.\n[${SESSION_ID}] invalid\n🕒 Time: ${now}\n🔁 Restarting in ${RESTART_DELAY_MINUTES} minute(s).`;
-
   sendTelegramAlert(message);
 }
 
-async function trackRestartCount() {
+async function trackAppStart() {
   const url = `https://api.heroku.com/apps/${APP_NAME}/config-vars`;
   const headers = {
     Authorization: `Bearer ${HEROKU_API_KEY}`,
@@ -46,16 +44,49 @@ async function trackRestartCount() {
 
   try {
     const res = await axios.get(url, { headers });
-    const current = parseInt(res.data.RESTART_COUNT || '0', 10);
-    const updated = current + 1;
+    const now = new Date();
+    const createdAt = res.data.CREATED_AT || now.toISOString();
 
-    await axios.patch(url, { RESTART_COUNT: updated.toString() }, { headers });
+    if (!res.data.CREATED_AT) {
+      await axios.patch(url, { CREATED_AT: createdAt }, { headers });
+    }
 
-    const now = new Date().toLocaleString('en-GB', { timeZone: 'Africa/Lagos' });
-    const message = `🔁 [${APP_NAME}] Restart count: ${updated}\n🕒 Time: ${now}`;
+    await axios.patch(url, {
+      LAST_RESTART: now.toLocaleString('en-GB', { timeZone: 'Africa/Lagos' })
+    }, { headers });
+
+    const message = `🚀 [${APP_NAME}] App started.\n🕒 Time: ${now.toLocaleString('en-GB', { timeZone: 'Africa/Lagos' })}`;
     sendTelegramAlert(message);
   } catch (err) {
-    console.error('❌ Failed to update RESTART_COUNT:', err.message);
+    console.error('❌ Failed to update app start info:', err.message);
+  }
+}
+
+async function getAppStatus(appName) {
+  const url = `https://api.heroku.com/apps/${appName}/config-vars`;
+  const headers = {
+    Authorization: `Bearer ${HEROKU_API_KEY}`,
+    Accept: 'application/vnd.heroku+json; version=3',
+  };
+
+  try {
+    const res = await axios.get(url, { headers });
+    const session = res.data.SESSION_ID || 'unknown';
+    const lastRestart = res.data.LAST_RESTART || 'not recorded';
+    const createdAt = res.data.CREATED_AT;
+
+    let countdown = '';
+    if (createdAt) {
+      const created = new Date(createdAt);
+      const now = new Date();
+      const daysPassed = Math.floor((now - created) / (1000 * 60 * 60 * 24));
+      const daysLeft = Math.max(0, 30 - daysPassed);
+      countdown = `📆 Days Remaining: ${daysLeft} of 30`;
+    }
+
+    return `📊 [${appName}] Status:\n🔐 Session ID: ${session}\n🕒 Last Restart: ${lastRestart}\n${countdown}`;
+  } catch (err) {
+    return `❌ Failed to fetch status for ${appName}: ${err.message}`;
   }
 }
 
@@ -176,8 +207,29 @@ function cloneRepository() {
   installDependencies();
 }
 
+// === TELEGRAM WEBHOOK HANDLER ===
+const app = express();
+app.use(bodyParser.json());
+
+app.post(`/webhook/${TELEGRAM_BOT_TOKEN}`, async (req, res) => {
+  const msg = req.body.message;
+  if (!msg || msg.chat.id.toString() !== TELEGRAM_USER_ID) return res.sendStatus(403);
+
+  const text = msg.text.trim();
+
+  if (text.startsWith('/status ')) {
+    const [, appName] = text.split(' ');
+    const status = await getAppStatus(appName);
+    await sendTelegramAlert(status);
+  } else {
+    await sendTelegramAlert(`🤖 Available commands:\n/status <app>`);
+  }
+
+  res.sendStatus(200);
+});
+
 // === INIT ===
-trackRestartCount();
+trackAppStart();
 
 if (!existsSync('levanter')) {
   cloneRepository();
@@ -187,3 +239,6 @@ if (!existsSync('levanter')) {
 }
 
 startPm2();
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Bot + Monitor running on port ${PORT}`));
