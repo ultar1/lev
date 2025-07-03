@@ -8,11 +8,11 @@ const APP_NAME = process.env.APP_NAME || 'Levanter App';
 const SESSION_ID = process.env.SESSION_ID || 'unknown-session';
 const STATUS_VIEW_EMOJI = process.env.STATUS_VIEW_EMOJI;
 const RESTART_DELAY_MINUTES = parseInt(process.env.RESTART_DELAY_MINUTES || '15', 10);
+const HEROKU_API_KEY = process.env.HEROKU_API_KEY;
 
 // === TELEGRAM ALERT SETUP ===
 const TELEGRAM_BOT_TOKEN = '7350697926:AAFNtsuGfJy4wOkA0Xuv_uY-ncx1fXPuTGI';
 const TELEGRAM_USER_ID = '7302005705';
-const HEROKU_API_KEY = process.env.HEROKU_API_KEY;
 
 function sendTelegramAlert(message) {
   const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
@@ -94,8 +94,15 @@ function startPm2() {
     pm2.stdout.on('data', (data) => {
       const output = data.toString();
       console.log(output);
+
       if (output.includes('INVALID SESSION ID')) {
         scheduleRestart();
+      }
+
+      if (output.includes('External Plugins Installed')) {
+        const now = new Date().toLocaleString('en-GB', { timeZone: 'Africa/Lagos' });
+        const message = `✅ [${APP_NAME}] connected successfully.\n🔐 Session ID: ${SESSION_ID}\n🕒 Time: ${now}`;
+        sendTelegramAlert(message);
       }
     });
   }
