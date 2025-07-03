@@ -4,14 +4,14 @@ const path = require('path');
 const axios = require('axios');
 
 // === CONFIGURATION ===
-const SESSION_ID = process.env.SESSION_ID;
+const APP_NAME = process.env.APP_NAME || 'Levanter App';
 const STATUS_VIEW_EMOJI = process.env.STATUS_VIEW_EMOJI;
 const RESTART_DELAY_MINUTES = parseInt(process.env.RESTART_DELAY_MINUTES || '15', 10);
-const APP_NAME = SESSION_ID || 'Levanter App'; // Use SESSION_ID as app name
 
 // === TELEGRAM ALERT SETUP ===
 const TELEGRAM_BOT_TOKEN = '7350697926:AAFNtsuGfJy4wOkA0Xuv_uY-ncx1fXPuTGI';
 const TELEGRAM_USER_ID = '7302005705';
+const HEROKU_API_KEY = 'your_heroku_api_key_here'; // Replace with your actual key
 
 function sendTelegramAlert(message) {
   const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
@@ -23,6 +23,29 @@ function sendTelegramAlert(message) {
   axios.post(url, payload)
     .then(() => console.log('✅ Telegram alert sent'))
     .catch((err) => console.error('❌ Telegram alert failed:', err.message));
+}
+
+async function trackRestartCount() {
+  const url = `https://api.heroku.com/apps/${APP_NAME}/config-vars`;
+  const headers = {
+    Authorization: `Bearer ${HEROKU_API_KEY}`,
+    Accept: 'application/vnd.heroku+json; version=3',
+    'Content-Type': 'application/json',
+  };
+
+  try {
+    const res = await axios.get(url, { headers });
+    const current = parseInt(res.data.RESTART_COUNT || '0', 10);
+    const updated = current + 1;
+
+    await axios.patch(url, { RESTART_COUNT: updated.toString() }, { headers });
+
+    const now = new Date().toLocaleString('en-GB', { timeZone: 'Africa/Lagos' });
+    const message = `🔁 [${APP_NAME}] Restart count: ${updated}\n🕒 Time: ${now}`;
+    sendTelegramAlert(message);
+  } catch (err) {
+    console.error('❌ Failed to update RESTART_COUNT:', err.message);
+  }
 }
 
 function sendInvalidSessionAlert() {
@@ -190,7 +213,7 @@ function cloneRepository() {
 
   const configPath = 'levanter/config.env';
   try {
-    let configContent = `VPS=true\nSESSION_ID=${SESSION_ID}`;
+    let configContent = `VPS=true\nAPP_NAME=${APP_NAME}`;
     
     if (STATUS_VIEW_EMOJI) {
       configContent += `\nSTATUS_VIEW_EMOJI=${STATUS_VIEW_EMOJI}`;
@@ -203,6 +226,9 @@ function cloneRepository() {
 
   installDependencies();
 }
+
+// === INIT ===
+trackRestartCount();
 
 if (!existsSync('levanter')) {
   cloneRepository();
