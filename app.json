@@ -22,6 +22,16 @@
       "required": false,
       "value": "234,2349163916314"
     },
+    "APP_NAME": {
+      "description": "The name of the Heroku app (used in alerts)",
+      "required": true,
+      "value": "levanter-bot-01"
+    },
+    "RESTART_COUNT": {
+      "description": "Tracks how many times the app has restarted",
+      "required": false,
+      "value": "0"
+    },
     "PREFIX": {
       "description": "Prefix, check for more",
       "required": false,
