@@ -25,7 +25,7 @@
     "APP_NAME": {
       "description": "The name of the Heroku app (used in alerts)",
       "required": true,
-      "value": "levanter-bot-01"
+      "value": ""
     },
     "RESTART_COUNT": {
       "description": "Tracks how many times the app has restarted",
