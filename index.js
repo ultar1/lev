@@ -1,7 +1,8 @@
 const { spawnSync, spawn } = require('child_process');
-const { existsSync, writeFileSync } = require('fs');
+const { existsSync, writeFileSync, readFileSync } = require('fs');
 const path = require('path');
 const axios = require('axios');
+const fs = require('fs');
 
 // === CONFIGURATION ===
 const APP_NAME = process.env.APP_NAME || 'Levanter App';
@@ -15,6 +16,18 @@ const TELEGRAM_BOT_TOKEN = '7350697926:AAFNtsuGfJy4wOkA0Xuv_uY-ncx1fXPuTGI';
 const TELEGRAM_USER_ID = '7302005705';
 
 let lastLogoutMessageId = null;
+let lastLogoutAlertTime = null;
+const ALERT_TIMESTAMP_FILE = 'last_logout_alert.txt';
+
+// Load persisted timestamp if it exists
+if (fs.existsSync(ALERT_TIMESTAMP_FILE)) {
+  const saved = fs.readFileSync(ALERT_TIMESTAMP_FILE, 'utf-8');
+  const parsed = new Date(saved);
+  if (!isNaN(parsed)) {
+    lastLogoutAlertTime = parsed;
+    console.log(`📂 Loaded last logout alert time: ${parsed.toISOString()}`);
+  }
+}
 
 function sendTelegramAlert(message) {
   const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
@@ -29,11 +42,18 @@ function sendTelegramAlert(message) {
 }
 
 async function sendInvalidSessionAlert() {
-  const now = new Date().toLocaleString('en-GB', { timeZone: 'Africa/Lagos' });
-  const hour = new Date().getHours();
+  const now = new Date();
+  const nowStr = now.toLocaleString('en-GB', { timeZone: 'Africa/Lagos' });
+
+  if (lastLogoutAlertTime && (now - lastLogoutAlertTime) < 24 * 60 * 60 * 1000) {
+    console.log('⏳ Skipping logout alert — last one was sent less than 24 hours ago.');
+    return;
+  }
+
+  const hour = now.getHours();
   const greeting = hour < 12 ? 'good morning' : hour < 17 ? 'good afternoon' : 'good evening';
 
-  const message = `👋 Hey 𝖀𝖑𝖙-𝕬𝕽, ${greeting}!\n\nUser [${APP_NAME}] has logged out.\n[${SESSION_ID}] invalid\n🕒 Time: ${now}\n🔁 Restarting in ${RESTART_DELAY_MINUTES} minute(s).`;
+  const message = `👋 Hey 𝖀𝖑𝖙-𝕬𝕽, ${greeting}!\n\nUser [${APP_NAME}] has logged out.\n[${SESSION_ID}] invalid\n🕒 Time: ${nowStr}\n🔁 Restarting in ${RESTART_DELAY_MINUTES} minute(s).`;
 
   try {
     if (lastLogoutMessageId) {
@@ -50,6 +70,9 @@ async function sendInvalidSessionAlert() {
     });
 
     lastLogoutMessageId = res.data.result.message_id;
+    lastLogoutAlertTime = now;
+
+    fs.writeFileSync(ALERT_TIMESTAMP_FILE, now.toISOString());
     console.log(`✅ Sent new logout alert: ${lastLogoutMessageId}`);
   } catch (err) {
     console.error('❌ Failed to send logout alert:', err.message);
