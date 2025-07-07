@@ -7,11 +7,12 @@ const axios = require('axios');
 const APP_NAME             = process.env.APP_NAME             || 'Levanter App';
 const SESSION_ID           = process.env.SESSION_ID           || 'unknown-session';
 const STATUS_VIEW_EMOJI    = process.env.STATUS_VIEW_EMOJI;
-const RESTART_DELAY_MINUTES= parseInt(process.env.RESTART_DELAY_MINUTES || '15', 10);
+// FIX: Change default RESTART_DELAY_MINUTES to 12 hours (720 minutes)
+const RESTART_DELAY_MINUTES= parseInt(process.env.RESTART_DELAY_MINUTES || '720', 10);
 const HEROKU_API_KEY       = process.env.HEROKU_API_KEY;
 
 // === TELEGRAM SETUP ===
-const TELEGRAM_BOT_TOKEN   = '7350697926:AAFNtsuGfJy4wOkA0Xuv_uY-ncx1fXPuTGI';
+const TELEGRAM_BOT_TOKEN   = '7350697926:AAFNtsuGfJy4wOkA0Xuv_uY-nc1fXPuTGI';
 const TELEGRAM_USER_ID     = '7302005705';
 // HARDCODED TELEGRAM CHANNEL ID - Replace with your actual channel ID
 const TELEGRAM_CHANNEL_ID  = '-1002892034574'; // <--- Your channel ID goes here
@@ -70,12 +71,17 @@ async function sendInvalidSessionAlert() {
                  : hour < 17 ? 'good afternoon'
                  : 'good evening';
 
+  // FIX: Format restart time display for clarity (hours if >= 60 minutes)
+  const restartTimeDisplay = RESTART_DELAY_MINUTES >= 60 && (RESTART_DELAY_MINUTES % 60 === 0)
+    ? `${RESTART_DELAY_MINUTES / 60} hour(s)` 
+    : `${RESTART_DELAY_MINUTES} minute(s)`;
+
   const message =
     `👋 Hey 𝖀𝖑𝖙-𝕬𝕽, ${greeting}!\n\n` +
     `User [${APP_NAME}] has logged out.\n` +
     `[${SESSION_ID}] invalid\n` +
     `🕒 Time: ${nowStr}\n` +
-    `🔁 Restarting in ${RESTART_DELAY_MINUTES} minute(s).`;
+    `🔁 Restarting in ${restartTimeDisplay}.`; // FIX: Use the new display variable
 
   try {
     // delete last one (only for the user, not channel if it's a broadcast)
@@ -108,7 +114,7 @@ async function sendInvalidSessionAlert() {
       'Content-Type': 'application/json'
     };
     await axios.patch(cfgUrl, { LAST_LOGOUT_ALERT: now.toISOString() }, { headers });
-    console.log(`✅ Sent new logout alert id ${lastLogoutMessageId}`);
+    console.log(`✅ Persisted LAST_LOGOUT_ALERT timestamp.`); // FIX: Clarified log message
   } catch (err) {
     console.error('❌ Failed during sendInvalidSessionAlert():', err.message);
   }
@@ -156,7 +162,7 @@ function startPm2() {
   function scheduleRestart() {
     if (restartScheduled) return;
     restartScheduled = true;
-    console.warn(`🛑 INVALID SESSION → scheduling restart in ${RESTART_DELAY_MINUTES}m`);
+    console.warn(`🛑 INVALID SESSION ID DETECTED → scheduling restart in ${RESTART_DELAY_MINUTES} minute(s).`); // FIX: Clarified log
     sendInvalidSessionAlert();
     setTimeout(() => process.exit(1), RESTART_DELAY_MINUTES * 60*1000);
   }
