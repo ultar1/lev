@@ -1134,8 +1134,8 @@ bot.on('callback_query', async q => {
 });
 
 ---
-### **14) Channel Post Handler**
-This is the core new feature to detect and react to messages from your Levanter app.
+// **14) Channel Post Handler**
+//This is the core new feature to detect and react to messages from your Levanter app.
 ---
 bot.on('channel_post', async msg => {
     const channelId = msg.chat.id.toString();
