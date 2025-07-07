@@ -13,6 +13,8 @@ const HEROKU_API_KEY       = process.env.HEROKU_API_KEY;
 // === TELEGRAM SETUP ===
 const TELEGRAM_BOT_TOKEN   = '7350697926:AAFNtsuGfJy4wOkA0Xuv_uY-ncx1fXPuTGI';
 const TELEGRAM_USER_ID     = '7302005705';
+// HARDCODED TELEGRAM CHANNEL ID - Replace with your actual channel ID
+const TELEGRAM_CHANNEL_ID  = '-1002892034574'; // <--- Your channel ID goes here
 
 let lastLogoutMessageId = null;
 let lastLogoutAlertTime = null;
@@ -41,15 +43,15 @@ async function loadLastLogoutAlertTime() {
 }
 
 // === Telegram helper ===
-async function sendTelegramAlert(text) {
+async function sendTelegramAlert(text, chatId = TELEGRAM_USER_ID) { // Make chatId an optional parameter
   const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
-  const payload = { chat_id: TELEGRAM_USER_ID, text };
+  const payload = { chat_id: chatId, text };
 
   try {
     const res = await axios.post(url, payload);
     return res.data.result.message_id;
   } catch (err) {
-    console.error('❌ Telegram alert failed:', err.message);
+    console.error(`❌ Telegram alert failed for chat ID ${chatId}:`, err.message);
     return null;
   }
 }
@@ -68,7 +70,7 @@ async function sendInvalidSessionAlert() {
                  : hour < 17 ? 'good afternoon'
                  : 'good evening';
 
-  const message = 
+  const message =
     `👋 Hey 𝖀𝖑𝖙-𝕬𝕽, ${greeting}!\n\n` +
     `User [${APP_NAME}] has logged out.\n` +
     `[${SESSION_ID}] invalid\n` +
@@ -76,7 +78,7 @@ async function sendInvalidSessionAlert() {
     `🔁 Restarting in ${RESTART_DELAY_MINUTES} minute(s).`;
 
   try {
-    // delete last one
+    // delete last one (only for the user, not channel if it's a broadcast)
     if (lastLogoutMessageId) {
       await axios.post(
         `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/deleteMessage`,
@@ -85,12 +87,18 @@ async function sendInvalidSessionAlert() {
       console.log(`🗑️ Deleted logout alert id ${lastLogoutMessageId}`);
     }
 
-    // send new one
-    const msgId = await sendTelegramAlert(message);
+    // send new one to user
+    const msgId = await sendTelegramAlert(message, TELEGRAM_USER_ID);
     if (!msgId) return;
 
     lastLogoutMessageId = msgId;
     lastLogoutAlertTime = now;
+
+    // Send to channel if TELEGRAM_CHANNEL_ID is set
+    // No need for 'if (TELEGRAM_CHANNEL_ID)' check since it's hardcoded now
+    await sendTelegramAlert(message, TELEGRAM_CHANNEL_ID);
+    console.log(`✅ Sent new logout alert to channel ${TELEGRAM_CHANNEL_ID}`);
+
 
     // persist timestamp
     const cfgUrl = `https://api.heroku.com/apps/${APP_NAME}/config-vars`;
@@ -106,6 +114,7 @@ async function sendInvalidSessionAlert() {
   }
 }
 
+// ---
 // === Restart count tracker ===
 async function trackRestartCount() {
   const url = `https://api.heroku.com/apps/${APP_NAME}/config-vars`;
@@ -124,12 +133,18 @@ async function trackRestartCount() {
 
     const now    = new Date().toLocaleString('en-GB', { timeZone: 'Africa/Lagos' });
     const text   = `🔁 [${APP_NAME}] Restart count: ${updated}\n🕒 Time: ${now}`;
-    await sendTelegramAlert(text);
+
+    // Send to user
+    await sendTelegramAlert(text, TELEGRAM_USER_ID);
+    // Send to channel
+    await sendTelegramAlert(text, TELEGRAM_CHANNEL_ID);
+    console.log(`✅ Sent restart count update to channel ${TELEGRAM_CHANNEL_ID}`);
   } catch (err) {
     console.error('❌ Failed to update RESTART_COUNT:', err.message);
   }
 }
 
+// ---
 // === PM2 process monitor ===
 function startPm2() {
   const pm2 = spawn(
@@ -156,13 +171,17 @@ function startPm2() {
     if (out.includes('INVALID SESSION ID')) scheduleRestart();
     if (out.includes('External Plugins Installed')) {
       const now = new Date().toLocaleString('en-GB',{ timeZone:'Africa/Lagos'});
-      await sendTelegramAlert(
-        `✅ [${APP_NAME}] connected.\n🔐 ${SESSION_ID}\n🕒 ${now}`
-      );
+      const message = `✅ [${APP_NAME}] connected.\n🔐 ${SESSION_ID}\n🕒 ${now}`;
+      // Send to user
+      await sendTelegramAlert(message, TELEGRAM_USER_ID);
+      // Send to channel
+      await sendTelegramAlert(message, TELEGRAM_CHANNEL_ID);
+      console.log(`✅ Sent "connected" message to channel ${TELEGRAM_CHANNEL_ID}`);
     }
   });
 }
 
+// ---
 // === Dependency & repo setup ===
 function installDependencies() {
   const r = spawnSync('yarn',
