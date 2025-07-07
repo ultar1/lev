@@ -12,7 +12,8 @@ const RESTART_DELAY_MINUTES= parseInt(process.env.RESTART_DELAY_MINUTES || '720'
 const HEROKU_API_KEY       = process.env.HEROKU_API_KEY;
 
 // === TELEGRAM SETUP ===
-const TELEGRAM_BOT_TOKEN   = '7350697926:AAFNtsuGfJy4wOkA0Xuv_uY-nc1fXPuTGI';
+// FIX: Hardcoded Telegram Bot Token as requested
+const TELEGRAM_BOT_TOKEN   = '7350697926:AAFNtsuGfJy4wOkA0Xuv_uY-ncx1fXPuTGI';
 const TELEGRAM_USER_ID     = '7302005705';
 // HARDCODED TELEGRAM CHANNEL ID - Replace with your actual channel ID
 const TELEGRAM_CHANNEL_ID  = '-1002892034574'; // <--- Your channel ID goes here
@@ -22,6 +23,11 @@ let lastLogoutAlertTime = null;
 
 // === Load LAST_LOGOUT_ALERT from Heroku config vars ===
 async function loadLastLogoutAlertTime() {
+  // Ensure HEROKU_API_KEY is available before making API calls
+  if (!HEROKU_API_KEY) {
+      console.warn('⚠️ HEROKU_API_KEY is not set. Cannot load LAST_LOGOUT_ALERT from Heroku config vars.');
+      return;
+  }
   const url = `https://api.heroku.com/apps/${APP_NAME}/config-vars`;
   const headers = {
     Authorization: `Bearer ${HEROKU_API_KEY}`,
@@ -39,12 +45,18 @@ async function loadLastLogoutAlertTime() {
       }
     }
   } catch (err) {
-    console.error('❌ Failed to load LAST_LOGOUT_ALERT:', err.message);
+    console.error('❌ Failed to load LAST_LOGOUT_ALERT from Heroku:', err.message);
   }
 }
 
 // === Telegram helper ===
 async function sendTelegramAlert(text, chatId = TELEGRAM_USER_ID) { // Make chatId an optional parameter
+  // Ensure TELEGRAM_BOT_TOKEN is available before sending alerts
+  if (!TELEGRAM_BOT_TOKEN) {
+      console.error('❌ TELEGRAM_BOT_TOKEN is not set. Cannot send Telegram alerts.');
+      return null;
+  }
+
   const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
   const payload = { chat_id: chatId, text };
 
@@ -53,6 +65,9 @@ async function sendTelegramAlert(text, chatId = TELEGRAM_USER_ID) { // Make chat
     return res.data.result.message_id;
   } catch (err) {
     console.error(`❌ Telegram alert failed for chat ID ${chatId}:`, err.message);
+    if (err.response) {
+        console.error(`   Telegram API Response: Status ${err.response.status}, Data: ${JSON.stringify(err.response.data)}`);
+    }
     return null;
   }
 }
@@ -86,11 +101,15 @@ async function sendInvalidSessionAlert() {
   try {
     // delete last one (only for the user, not channel if it's a broadcast)
     if (lastLogoutMessageId) {
-      await axios.post(
-        `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/deleteMessage`,
-        { chat_id: TELEGRAM_USER_ID, message_id: lastLogoutMessageId }
-      );
-      console.log(`🗑️ Deleted logout alert id ${lastLogoutMessageId}`);
+      try { // Added try-catch for delete message to prevent it from failing the whole alert
+        await axios.post(
+          `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/deleteMessage`,
+          { chat_id: TELEGRAM_USER_ID, message_id: lastLogoutMessageId }
+        );
+        console.log(`🗑️ Deleted logout alert id ${lastLogoutMessageId}`);
+      } catch (delErr) {
+        console.warn(`⚠️ Failed to delete previous message ${lastLogoutMessageId}: ${delErr.message}`);
+      }
     }
 
     // send new one to user
@@ -100,13 +119,17 @@ async function sendInvalidSessionAlert() {
     lastLogoutMessageId = msgId;
     lastLogoutAlertTime = now;
 
-    // Send to channel if TELEGRAM_CHANNEL_ID is set
-    // No need for 'if (TELEGRAM_CHANNEL_ID)' check since it's hardcoded now
+    // Send to channel 
     await sendTelegramAlert(message, TELEGRAM_CHANNEL_ID);
     console.log(`✅ Sent new logout alert to channel ${TELEGRAM_CHANNEL_ID}`);
 
 
     // persist timestamp
+    // Ensure HEROKU_API_KEY is available before making API calls
+    if (!HEROKU_API_KEY) {
+        console.warn('⚠️ HEROKU_API_KEY is not set. Cannot persist LAST_LOGOUT_ALERT timestamp.');
+        return;
+    }
     const cfgUrl = `https://api.heroku.com/apps/${APP_NAME}/config-vars`;
     const headers = {
       Authorization: `Bearer ${HEROKU_API_KEY}`,
@@ -123,6 +146,11 @@ async function sendInvalidSessionAlert() {
 // ---
 // === Restart count tracker ===
 async function trackRestartCount() {
+  // Ensure HEROKU_API_KEY is available before making API calls
+  if (!HEROKU_API_KEY) {
+      console.warn('⚠️ HEROKU_API_KEY is not set. Cannot track restart count on Heroku config vars.');
+      return;
+  }
   const url = `https://api.heroku.com/apps/${APP_NAME}/config-vars`;
   const headers = {
     Authorization: `Bearer ${HEROKU_API_KEY}`,
