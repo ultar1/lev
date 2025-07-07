@@ -721,6 +721,7 @@ bot.onText(/^\/start$/, async msg => {
   } else {
     // FIX: Send image with professional caption and keyboard for regular users
     const welcomeImageUrl = 'https://files.catbox.moe/syx8uk.jpeg';
+    // FIX: Updated welcomeCaption with exact words provided by user
     const welcomeCaption = `
 👋 Welcome to our Bot Deployment Service!
 
@@ -902,14 +903,20 @@ bot.on('message', async msg => {
   }
 
   if (text === 'Get Session') {
-    const guideCaption =
-        "👋 Welcome to our Bot Deployment Service!\n\n" +
-        "To get started, please follow these simple steps:\n\n" +
-        "1️⃣  Connect Your WhatsApp:\n" +
-        "    Tap the 'Get Session' button to retrieve the necessary session details to link your WhatsApp account.\n\n" +
-        "2️⃣  Deploy Your Bot:\n" +
-        "    Once you have your session, use the 'Deploy' button to effortlessly launch your personalized bot.\n\n" +
-        "We're here to assist you every step of the way!\n"; // FIX: Updated with shorter guide text
+    // FIX: Updated guideCaption with exact words provided by user
+    const guideCaption = `
+👋 Welcome to our Bot Deployment Service!
+
+To get started, please follow these simple steps:
+
+1️⃣  Connect Your WhatsApp:
+    Tap the 'Get Session' button to retrieve the necessary session details to link your WhatsApp account.
+
+2️⃣  Deploy Your Bot:
+    Once you have your session, use the 'Deploy' button to effortlessly launch your personalized bot.
+
+We're here to assist you every step of the way!
+`;
 
     try {
       await bot.sendPhoto(cid, 'https://files.catbox.moe/an2cc1.jpeg', {
