@@ -7,8 +7,8 @@ const axios = require('axios');
 const APP_NAME             = process.env.APP_NAME             || 'Levanter App';
 const SESSION_ID           = process.env.SESSION_ID           || 'unknown-session';
 const STATUS_VIEW_EMOJI    = process.env.STATUS_VIEW_EMOJI;
-// FIX: Change default RESTART_DELAY_MINUTES to 12 hours (720 minutes)
-const RESTART_DELAY_MINUTES= parseInt(process.env.RESTART_DELAY_MINUTES || '720', 10);
+// FIXED: Changed default RESTART_DELAY_MINUTES from 12 hours (720) to 6 hours (360)
+const RESTART_DELAY_MINUTES= parseInt(process.env.RESTART_DELAY_MINUTES || '360', 10);
 const HEROKU_API_KEY       = process.env.HEROKU_API_KEY;
 
 // === TELEGRAM SETUP ===
