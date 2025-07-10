@@ -5,7 +5,7 @@
     "ALWAYS_ONLINE": {
       "description": "Show bot number last seen as online",
       "required": false,
-      "value": "true"
+      "value": "false"
     },
     "LOG_MSG": {
       "description": "Show WhatsApp messages in log",
