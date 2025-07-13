@@ -13,7 +13,7 @@ const HEROKU_API_KEY       = process.env.HEROKU_API_KEY;
 
 // === TELEGRAM SETUP ===
 // FIX: Hardcoded Telegram Bot Token as requested
-const TELEGRAM_BOT_TOKEN   = '7350697926:AAFNtsuGfJy4wOkA0Xuv_uY-ncx1fXPuTGI';
+const TELEGRAM_BOT_TOKEN   = '7350697926:AAE3TO87lDFGKhZAiOzcWnyf4XIsIeSZhLo';
 const TELEGRAM_USER_ID     = '7302005705';
 // HARDCODED TELEGRAM CHANNEL ID - Replace with your actual channel ID
 const TELEGRAM_CHANNEL_ID  = '-1002892034574'; // <--- Your channel ID goes here
