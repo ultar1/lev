@@ -66,7 +66,7 @@ async function sendTelegramAlert(text, chatId = TELEGRAM_USER_ID) {
   }
 }
 
-// === “Logged out” alert with 24-hr cooldown & auto-delete ===
+// === “Logged out” alert with 24-hr cooldown ===
 async function sendInvalidSessionAlert() {
   const now = new Date();
   if (lastLogoutAlertTime && (now - lastLogoutAlertTime) < 24 * 3600e3) {
@@ -86,7 +86,7 @@ async function sendInvalidSessionAlert() {
 
   const message =
     `Hey 𝖀𝖑𝖙-𝕬𝕽, ${greeting}!\n\n` +
-    `User *${APP_NAME}* has logged out.\n` +
+    `User \`${APP_NAME}\` has logged out.\n` +
     `Session \`${SESSION_ID}\` is invalid.\n` +
     `Time: ${nowStr}\n` +
     `Restarting in ${restartTimeDisplay}.`;
@@ -98,7 +98,6 @@ async function sendInvalidSessionAlert() {
           `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/deleteMessage`,
           { chat_id: TELEGRAM_USER_ID, message_id: lastLogoutMessageId }
         );
-        console.log(`Deleted logout alert id ${lastLogoutMessageId}`);
       } catch (delErr) {
         console.warn(`Failed to delete previous message ${lastLogoutMessageId}: ${delErr.message}`);
       }
@@ -111,10 +110,9 @@ async function sendInvalidSessionAlert() {
     lastLogoutAlertTime = now;
 
     await sendTelegramAlert(message, TELEGRAM_CHANNEL_ID);
-    console.log(`Sent new logout alert to channel ${TELEGRAM_CHANNEL_ID}`);
-
+    
     if (!HEROKU_API_KEY) {
-        console.warn('HEROKU_API_KEY is not set. Cannot persist LAST_LOGOUT_ALERT timestamp.');
+        console.warn('HEROKU_API_KEY is not set. Cannot persist timestamp.');
         return;
     }
     const cfgUrl = `https://api.heroku.com/apps/${APP_NAME}/config-vars`;
@@ -124,7 +122,6 @@ async function sendInvalidSessionAlert() {
       'Content-Type': 'application/json'
     };
     await axios.patch(cfgUrl, { LAST_LOGOUT_ALERT: now.toISOString() }, { headers });
-    console.log(`Persisted LAST_LOGOUT_ALERT timestamp.`);
   } catch (err) {
     console.error('Failed during sendInvalidSessionAlert():', err.message);
   }
@@ -151,11 +148,10 @@ async function trackRestartCount() {
     await axios.patch(url, { RESTART_COUNT: updated }, { headers });
 
     const now    = new Date().toLocaleString('en-GB', { timeZone: 'Africa/Lagos' });
-    const text   = `*${APP_NAME}* | Restart count: ${updated}\n🕒 Time: ${now}`;
+    const text   = `\`${APP_NAME}\` | Restart count: ${updated}\n🕒 Time: ${now}`;
 
     await sendTelegramAlert(text, TELEGRAM_USER_ID);
     await sendTelegramAlert(text, TELEGRAM_CHANNEL_ID);
-    console.log(`Sent restart count update to channel ${TELEGRAM_CHANNEL_ID}`);
   } catch (err) {
     console.error('Failed to update RESTART_COUNT:', err.message);
   }
@@ -187,11 +183,10 @@ function startPm2() {
     if (out.includes('INVALID SESSION ID')) scheduleRestart();
     if (out.includes('External Plugins Installed')) {
       const now = new Date().toLocaleString('en-GB',{ timeZone:'Africa/Lagos'});
-      const message = `*${APP_NAME}* connected.\nSession: \`${SESSION_ID}\`\n🕒 ${now}`;
+      const message = `\`${APP_NAME}\` connected.\nSession: \`${SESSION_ID}\`\n🕒 ${now}`;
       
       await sendTelegramAlert(message, TELEGRAM_USER_ID);
       await sendTelegramAlert(message, TELEGRAM_CHANNEL_ID);
-      console.log(` Sent "connected" message to channel ${TELEGRAM_CHANNEL_ID}`);
     }
   });
 }
