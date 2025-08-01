@@ -7,25 +7,20 @@ const axios = require('axios');
 const APP_NAME             = process.env.APP_NAME             || 'Levanter App';
 const SESSION_ID           = process.env.SESSION_ID           || 'unknown-session';
 const STATUS_VIEW_EMOJI    = process.env.STATUS_VIEW_EMOJI;
-// FIXED: Changed default RESTART_DELAY_MINUTES from 12 hours (720) to 6 hours (360)
 const RESTART_DELAY_MINUTES= parseInt(process.env.RESTART_DELAY_MINUTES || '360', 10);
 const HEROKU_API_KEY       = process.env.HEROKU_API_KEY;
 
 // === TELEGRAM SETUP ===
-// FIX: Hardcoded Telegram Bot Token as requested
 const TELEGRAM_BOT_TOKEN   = '7350697926:AAE3TO87lDFGKhZAiOzcWnyf4XIsIeSZhLo';
 const TELEGRAM_USER_ID     = '7302005705';
-// HARDCODED TELEGRAM CHANNEL ID - Replace with your actual channel ID
-const TELEGRAM_CHANNEL_ID  = '-1002892034574'; // <--- Your channel ID goes here
+const TELEGRAM_CHANNEL_ID  = '-1002892034574';
 
 let lastLogoutMessageId = null;
 let lastLogoutAlertTime = null;
 
-// === Load LAST_LOGOUT_ALERT from Heroku config vars ===
 async function loadLastLogoutAlertTime() {
-  // Ensure HEROKU_API_KEY is available before making API calls
   if (!HEROKU_API_KEY) {
-      console.warn('HEROKU_API_KEY is not set. Cannot load LAST_LOGOUT_ALERT from Heroku config vars.');
+      console.warn('HEROKU_API_KEY is not set. Cannot load LAST_LOGOUT_ALERT.');
       return;
   }
   const url = `https://api.heroku.com/apps/${APP_NAME}/config-vars`;
@@ -50,15 +45,14 @@ async function loadLastLogoutAlertTime() {
 }
 
 // === Telegram helper ===
-async function sendTelegramAlert(text, chatId = TELEGRAM_USER_ID) { // Make chatId an optional parameter
-  // Ensure TELEGRAM_BOT_TOKEN is available before sending alerts
+async function sendTelegramAlert(text, chatId = TELEGRAM_USER_ID) {
   if (!TELEGRAM_BOT_TOKEN) {
       console.error('TELEGRAM_BOT_TOKEN is not set. Cannot send Telegram alerts.');
       return null;
   }
 
   const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
-  const payload = { chat_id: chatId, text };
+  const payload = { chat_id: chatId, text, parse_mode: 'Markdown' };
 
   try {
     const res = await axios.post(url, payload);
@@ -86,22 +80,20 @@ async function sendInvalidSessionAlert() {
                  : hour < 17 ? 'good afternoon'
                  : 'good evening';
 
-  // FIX: Format restart time display for clarity (hours if >= 60 minutes)
   const restartTimeDisplay = RESTART_DELAY_MINUTES >= 60 && (RESTART_DELAY_MINUTES % 60 === 0)
     ? `${RESTART_DELAY_MINUTES / 60} hour(s)` 
     : `${RESTART_DELAY_MINUTES} minute(s)`;
 
   const message =
     `Hey 𝖀𝖑𝖙-𝕬𝕽, ${greeting}!\n\n` +
-    `User [${APP_NAME}] has logged out.\n` +
-    `[${SESSION_ID}] invalid\n` +
+    `User *${APP_NAME}* has logged out.\n` +
+    `Session \`${SESSION_ID}\` is invalid.\n` +
     `Time: ${nowStr}\n` +
-    `Restarting in ${restartTimeDisplay}.`; // FIX: Use the new display variable
+    `Restarting in ${restartTimeDisplay}.`;
 
   try {
-    // delete last one (only for the user, not channel if it's a broadcast)
     if (lastLogoutMessageId) {
-      try { // Added try-catch for delete message to prevent it from failing the whole alert
+      try {
         await axios.post(
           `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/deleteMessage`,
           { chat_id: TELEGRAM_USER_ID, message_id: lastLogoutMessageId }
@@ -112,20 +104,15 @@ async function sendInvalidSessionAlert() {
       }
     }
 
-    // send new one to user
     const msgId = await sendTelegramAlert(message, TELEGRAM_USER_ID);
     if (!msgId) return;
 
     lastLogoutMessageId = msgId;
     lastLogoutAlertTime = now;
 
-    // Send to channel 
     await sendTelegramAlert(message, TELEGRAM_CHANNEL_ID);
     console.log(`Sent new logout alert to channel ${TELEGRAM_CHANNEL_ID}`);
 
-
-    // persist timestamp
-    // Ensure HEROKU_API_KEY is available before making API calls
     if (!HEROKU_API_KEY) {
         console.warn('HEROKU_API_KEY is not set. Cannot persist LAST_LOGOUT_ALERT timestamp.');
         return;
@@ -137,18 +124,16 @@ async function sendInvalidSessionAlert() {
       'Content-Type': 'application/json'
     };
     await axios.patch(cfgUrl, { LAST_LOGOUT_ALERT: now.toISOString() }, { headers });
-    console.log(`Persisted LAST_LOGOUT_ALERT timestamp.`); // FIX: Clarified log message
+    console.log(`Persisted LAST_LOGOUT_ALERT timestamp.`);
   } catch (err) {
     console.error('Failed during sendInvalidSessionAlert():', err.message);
   }
 }
 
-// ---
 // === Restart count tracker ===
 async function trackRestartCount() {
-  // Ensure HEROKU_API_KEY is available before making API calls
   if (!HEROKU_API_KEY) {
-      console.warn('HEROKU_API_KEY is not set. Cannot track restart count on Heroku config vars.');
+      console.warn('HEROKU_API_KEY is not set. Cannot track restart count.');
       return;
   }
   const url = `https://api.heroku.com/apps/${APP_NAME}/config-vars`;
@@ -166,11 +151,9 @@ async function trackRestartCount() {
     await axios.patch(url, { RESTART_COUNT: updated }, { headers });
 
     const now    = new Date().toLocaleString('en-GB', { timeZone: 'Africa/Lagos' });
-    const text   = `[${APP_NAME}] Restart count: ${updated}\n🕒 Time: ${now}`;
+    const text   = `*${APP_NAME}* | Restart count: ${updated}\n🕒 Time: ${now}`;
 
-    // Send to user
     await sendTelegramAlert(text, TELEGRAM_USER_ID);
-    // Send to channel
     await sendTelegramAlert(text, TELEGRAM_CHANNEL_ID);
     console.log(`Sent restart count update to channel ${TELEGRAM_CHANNEL_ID}`);
   } catch (err) {
@@ -178,7 +161,6 @@ async function trackRestartCount() {
   }
 }
 
-// ---
 // === PM2 process monitor ===
 function startPm2() {
   const pm2 = spawn(
@@ -190,7 +172,7 @@ function startPm2() {
   function scheduleRestart() {
     if (restartScheduled) return;
     restartScheduled = true;
-    console.warn(`INVALID SESSION ID DETECTED → scheduling restart in ${RESTART_DELAY_MINUTES} minute(s).`); // FIX: Clarified log
+    console.warn(`INVALID SESSION ID DETECTED → scheduling restart in ${RESTART_DELAY_MINUTES} minute(s).`);
     sendInvalidSessionAlert();
     setTimeout(() => process.exit(1), RESTART_DELAY_MINUTES * 60*1000);
   }
@@ -205,17 +187,15 @@ function startPm2() {
     if (out.includes('INVALID SESSION ID')) scheduleRestart();
     if (out.includes('External Plugins Installed')) {
       const now = new Date().toLocaleString('en-GB',{ timeZone:'Africa/Lagos'});
-      const message = `[${APP_NAME}] connected.\n🔐 ${SESSION_ID}\n🕒 ${now}`;
-      // Send to user
+      const message = `*${APP_NAME}* connected.\nSession: \`${SESSION_ID}\`\n🕒 ${now}`;
+      
       await sendTelegramAlert(message, TELEGRAM_USER_ID);
-      // Send to channel
       await sendTelegramAlert(message, TELEGRAM_CHANNEL_ID);
       console.log(` Sent "connected" message to channel ${TELEGRAM_CHANNEL_ID}`);
     }
   });
 }
 
-// ---
 // === Dependency & repo setup ===
 function installDependencies() {
   const r = spawnSync('yarn',
