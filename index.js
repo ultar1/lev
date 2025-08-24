@@ -214,31 +214,32 @@ function startPm2() {
     }
   });
  // This is the CRITICAL part. It listens for errors.
-  pm2.stderr.on('data', async data => {
+    pm2.stderr.on('data', async data => {
     const error = data.toString().trim();
     if (error.length > 0) {
       console.error(error);
       
       // Check for the R14 memory error message
       if (error.includes('R14 (Memory quota exceeded)')) {
-          // Send the specific message you want to the channel
-          const errorMessage = R14 memory error detected for [${APP_NAME}];
+          // Send the specific message you want to the channel, correctly formatted as a string
+          const errorMessage = `R14 memory error detected for [${APP_NAME}]`;
           await sendTelegramAlert(errorMessage, TELEGRAM_CHANNEL_ID);
       } else {
           // If it's another error, send the raw error message
-          await sendTelegramAlert([LEVANTER_ERROR] ${error}, TELEGRAM_CHANNEL_ID);
+          await sendTelegramAlert(`[LEVANTER_ERROR] ${error}`, TELEGRAM_CHANNEL_ID);
       }
     }
   });
 
   pm2.on('close', async (code) => {
-    const exitMessage = [LEVANTER_ERROR] Bot process exited with code ${code}. Restarting...;
+    // This is a correct template literal
+    const exitMessage = `[LEVANTER_ERROR] Bot process exited with code ${code}. Restarting...`;
     console.log(exitMessage);
     await sendTelegramAlert(exitMessage, TELEGRAM_CHANNEL_ID);
     // Restart the parent process to restart PM2
     process.exit(1); 
   });
-}
+
 
 // ---
 // === Dependency & repo setup ===
