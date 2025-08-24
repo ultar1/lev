@@ -11,9 +11,9 @@ const RESTART_DELAY_MINUTES= parseInt(process.env.RESTART_DELAY_MINUTES || '360'
 const HEROKU_API_KEY       = process.env.HEROKU_API_KEY;
 
 // === TELEGRAM SETUP ===
-const TELEGRAM_BOT_TOKEN   = process.env.TELEGRAM_BOT_TOKEN;
-const TELEGRAM_USER_ID     = process.env.TELEGRAM_USER_ID;
-const TELEGRAM_CHANNEL_ID  = process.env.TELEGRAM_CHANNEL_ID;
+const TELEGRAM_BOT_TOKEN   = '7350697926:AAE3TO87lDFGKhZAiOzcWnyf4XIsIeSZhLo'; // Restored token
+const TELEGRAM_USER_ID     = '7302005705'; // Restored token
+const TELEGRAM_CHANNEL_ID  = '-1002892034574'; // Restored token
 
 let lastLogoutMessageId = null;
 let lastLogoutAlertTime = null;
