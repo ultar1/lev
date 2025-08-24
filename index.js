@@ -239,7 +239,7 @@ function startPm2() {
     // Restart the parent process to restart PM2
     process.exit(1); 
   });
-
+}
 
 // ---
 // === Dependency & repo setup ===
