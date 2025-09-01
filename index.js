@@ -185,28 +185,35 @@ function startPm2() {
     sendInvalidSessionAlert();
     setTimeout(() => process.exit(1), RESTART_DELAY_MINUTES * 60 * 1000);
   }
-
-  pm2.stderr.on('data', data => {
-    // This only handles stderr from the child process now
+  
+  // --- THIS IS THE ONLY CHANGE, AS REQUESTED ---
+  // The R14 error might appear on stderr, so we check for it here as well.
+  pm2.stderr.on('data', async data => {
     const error = data.toString();
     console.error(error.trim());
-    if (error.includes('INVALID SESSION ID')) scheduleRestart();
+    
+    if (error.includes('Error R14 (Memory quota exceeded)')) {
+        await sendR14ErrorAlert();
+    }
+    
+    if (error.includes('INVALID SESSION ID')) {
+        scheduleRestart();
+    }
   });
+  // --- END OF CHANGE ---
 
   pm2.stdout.on('data', async data => {
     const out = data.toString();
-    console.log(out.trim()); // Log all output for debugging
+    console.log(out.trim()); 
     
-    // --- THIS IS THE ONLY CHANGE, AS REQUESTED ---
-    // Check for R14 errors, connected status, and invalid sessions from the main output stream
     if (out.includes('Error R14 (Memory quota exceeded)')) {
         await sendR14ErrorAlert();
     }
-    // --- END OF CHANGE ---
 
     if (out.includes('INVALID SESSION ID')) {
       scheduleRestart();
     }
+    
     if (out.includes('External Plugins Installed')) {
       const now = new Date().toLocaleString('en-GB',{ timeZone:'Africa/Lagos'});
       const message = `[${APP_NAME}] connected.\n🔐 ${SESSION_ID}\n🕒 ${now}`;
