@@ -139,6 +139,39 @@ async function sendR14ErrorAlert() {
 }
 // --- END OF NEW FUNCTION ---
 
+// --- NEW: Monitor Heroku logs every 3 minutes ---
+async function monitorHerokuLogs() {
+  if (!HEROKU_API_KEY) {
+    console.warn('HEROKU_API_KEY is not set. Cannot monitor Heroku logs.');
+    return;
+  }
+
+  const url = `https://api.heroku.com/apps/${APP_NAME}/log-sessions`;
+  const headers = {
+    Authorization: `Bearer ${HEROKU_API_KEY}`,
+    Accept: 'application/vnd.heroku+json; version=3',
+    'Content-Type': 'application/json'
+  };
+
+  try {
+    const res = await axios.post(url, { lines: 150, source: 'app' }, { headers });
+    const logplexUrl = res.data.logplex_url;
+
+    const logsRes = await axios.get(logplexUrl);
+    const logs = logsRes.data;
+
+    if (logs.includes('Error R14 (Memory quota exceeded)')) {
+      console.log('[MONITOR] R14 detected in Heroku logs.');
+      await sendR14ErrorAlert();
+    } else {
+      console.log('[MONITOR] No R14 errors found in latest logs.');
+    }
+  } catch (err) {
+    console.error('Failed to monitor Heroku logs:', err.message);
+  }
+}
+// --- END OF NEW FUNCTION ---
+
 // === Restart count tracker ===
 async function trackRestartCount() {
   if (!HEROKU_API_KEY) {
@@ -186,8 +219,6 @@ function startPm2() {
     setTimeout(() => process.exit(1), RESTART_DELAY_MINUTES * 60 * 1000);
   }
   
-  // --- THIS IS THE ONLY CHANGE, AS REQUESTED ---
-  // The R14 error might appear on stderr, so we check for it here as well.
   pm2.stderr.on('data', async data => {
     const error = data.toString();
     console.error(error.trim());
@@ -200,7 +231,6 @@ function startPm2() {
         scheduleRestart();
     }
   });
-  // --- END OF CHANGE ---
 
   pm2.stdout.on('data', async data => {
     const out = data.toString();
@@ -276,6 +306,9 @@ function cloneRepository() {
   } else {
     checkDependencies();
   }
+
+  // Start monitoring logs every 3 minutes
+  setInterval(monitorHerokuLogs, 3 * 60 * 1000);
 
   startPm2();
 })();
