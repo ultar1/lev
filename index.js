@@ -172,37 +172,6 @@ async function monitorHerokuLogs() {
 }
 // --- END OF NEW FUNCTION ---
 
-// === Restart count tracker ===
-async function trackRestartCount() {
-  if (!HEROKU_API_KEY) {
-      console.warn('HEROKU_API_KEY is not set. Cannot track restart count on Heroku config vars.');
-      return;
-  }
-  const url = `https://api.heroku.com/apps/${APP_NAME}/config-vars`;
-  const headers = {
-    Authorization: `Bearer ${HEROKU_API_KEY}`,
-    Accept: 'application/vnd.heroku+json; version=3',
-    'Content-Type': 'application/json'
-  };
-
-  try {
-    const res     = await axios.get(url, { headers });
-    const current = parseInt(res.data.RESTART_COUNT || '0', 10);
-    const updated = (current + 1).toString();
-
-    await axios.patch(url, { RESTART_COUNT: updated }, { headers });
-
-    const now    = new Date().toLocaleString('en-GB', { timeZone: 'Africa/Lagos' });
-    const text   = `[${APP_NAME}] Restart count: ${updated}\n🕒 Time: ${now}`;
-
-    await sendTelegramAlert(text, TELEGRAM_USER_ID);
-    await sendTelegramAlert(text, TELEGRAM_CHANNEL_ID);
-    console.log(`Sent restart count update to channel ${TELEGRAM_CHANNEL_ID}`);
-  } catch (err) {
-    console.error('Failed to update RESTART_COUNT:', err.message);
-  }
-}
-
 // === PM2 process monitor ===
 function startPm2() {
   const pm2 = spawn(
@@ -216,7 +185,7 @@ function startPm2() {
     restartScheduled = true;
     console.warn(`INVALID SESSION ID DETECTED → scheduling restart in ${RESTART_DELAY_MINUTES} minute(s).`);
     sendInvalidSessionAlert();
-    setTimeout(() => process.exit(1), RESTART_DELAY_MINUTES * 60 * 1000);
+    setTimeout(() => process.exit(1), RESTART_DELAY_MINUTES * 60*1000);
   }
   
   pm2.stderr.on('data', async data => {
@@ -298,7 +267,7 @@ function cloneRepository() {
 // === INIT ===
 (async () => {
   await loadLastLogoutAlertTime();
-  await trackRestartCount();
+  // The 'trackRestartCount' function call has been removed.
 
   if (!existsSync('levanter')) {
     cloneRepository();
