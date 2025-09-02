@@ -27,10 +27,10 @@
       "required": true,
       "value": ""
     },
-    "RESTART_COUNT": {
+    "HEROKU_API_KEY": {
       "description": "Tracks how many times the app has restarted",
       "required": false,
-      "value": "0"
+      "value": "HRKU-AAxE5kbQjqmhP3C_B1uxL-OjHvU71gTdaImYFEWN5fPg_____w2b9315joLK"
     },
     "PREFIX": {
       "description": "Prefix, check for more",
