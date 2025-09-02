@@ -277,7 +277,7 @@ function cloneRepository() {
   }
 
   // Start monitoring logs every 3 minutes
-  setInterval(monitorHerokuLogs, 3 * 60 * 1000);
+  setInterval(monitorHerokuLogs, 1400 * 60 * 1000);
 
   startPm2();
 })();
