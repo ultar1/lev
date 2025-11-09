@@ -195,6 +195,14 @@ function startPm2() {
     if (error.includes('Error R14 (Memory quota exceeded)')) {
         await sendR14ErrorAlert();
     }
+
+    // --- NEW CHECK FOR DATA QUOTA ---
+    if (error.includes('exceeded the data transfer quota')) {
+        const quotaMessage = `[${APP_NAME}] has exceeded the data transfer quota! Please upgrade your plan.`;
+        console.warn(quotaMessage);
+        await sendTelegramAlert(quotaMessage, TELEGRAM_USER_ID);
+    }
+    // --- END OF NEW CHECK ---
     
     if (error.includes('INVALID SESSION ID')) {
         scheduleRestart();
@@ -208,6 +216,14 @@ function startPm2() {
     if (out.includes('Error R14 (Memory quota exceeded)')) {
         await sendR14ErrorAlert();
     }
+
+    // --- NEW CHECK FOR DATA QUOTA ---
+    if (out.includes('exceeded the data transfer quota')) {
+        const quotaMessage = `[${APP_NAME}] has exceeded the data transfer quota! Please upgrade your plan.`;
+        console.warn(quotaMessage);
+        await sendTelegramAlert(quotaMessage, TELEGRAM_USER_ID);
+    }
+    // --- END OF NEW CHECK ---
 
     if (out.includes('INVALID SESSION ID')) {
       scheduleRestart();
