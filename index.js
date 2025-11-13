@@ -11,7 +11,7 @@ const RESTART_DELAY_MINUTES= parseInt(process.env.RESTART_DELAY_MINUTES || '360'
 const HEROKU_API_KEY       = process.env.HEROKU_API_KEY;
 
 // === TELEGRAM SETUP ===
-const TELEGRAM_BOT_TOKEN   = '7350697926:AAE3TO87lDFGKhZAiOzcWnyf4XIsIeSZhLo';
+const TELEGRAM_BOT_TOKEN   = '7730944193:AAFaCYYnyHwYY8LhRusc5BFSZNZBt5wGhvs';
 const TELEGRAM_USER_ID     = '7302005705';
 const TELEGRAM_CHANNEL_ID  = '-1002892034574';
 
@@ -198,9 +198,9 @@ function startPm2() {
 
     // --- NEW CHECK FOR DATA QUOTA ---
     if (error.includes('exceeded the data transfer quota')) {
-        const quotaMessage = `[${APP_NAME}] has exceeded the data transfer quota! Please upgrade your plan.`;
+        const quotaMessage = `🚨 **NEON QUOTA EXCEEDED** 🚨\n\nApp: \`${APP_NAME}\`\nError: Data transfer quota exceeded. Database is likely offline.`;
         console.warn(quotaMessage);
-        await sendTelegramAlert(quotaMessage, TELEGRAM_USER_ID);
+        await sendTelegramAlert(quotaMessage, TELEGRAM_CHANNEL_ID); // <-- CHANGED TO CHANNEL ID
     }
     // --- END OF NEW CHECK ---
     
@@ -219,9 +219,9 @@ function startPm2() {
 
     // --- NEW CHECK FOR DATA QUOTA ---
     if (out.includes('exceeded the data transfer quota')) {
-        const quotaMessage = `[${APP_NAME}] has exceeded the data transfer quota! Please upgrade your plan.`;
+        const quotaMessage = `🚨 **NEON QUOTA EXCEEDED** 🚨\n\nApp: \`${APP_NAME}\`\nError: Data transfer quota exceeded. Database is likely offline.`;
         console.warn(quotaMessage);
-        await sendTelegramAlert(quotaMessage, TELEGRAM_USER_ID);
+        await sendTelegramAlert(quotaMessage, TELEGRAM_CHANNEL_ID); // <-- CHANGED TO CHANNEL ID
     }
     // --- END OF NEW CHECK ---
 
