@@ -160,12 +160,21 @@ async function monitorHerokuLogs() {
     const logsRes = await axios.get(logplexUrl);
     const logs = logsRes.data;
 
+    // Check for R14 errors
     if (logs.includes('Error R14 (Memory quota exceeded)')) {
       console.log('[MONITOR] R14 detected in Heroku logs.');
       await sendR14ErrorAlert();
     } else {
       console.log('[MONITOR] No R14 errors found in latest logs.');
     }
+
+    // === UPDATE: Check for SIGKILL / Crash / Status 137 ===
+    if (logs.includes('Process exited with status 137') || logs.includes('State changed from starting to crashed')) {
+        console.log('[MONITOR] CRASH DETECTED (SIGKILL/Status 137). Restarting app immediately...');
+        process.exit(1);
+    }
+    // === END UPDATE ===
+
   } catch (err) {
     console.error('Failed to monitor Heroku logs:', err.message);
   }
