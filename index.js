@@ -256,16 +256,6 @@ function startPm2() {
 }
 
 // === Dependency & repo setup ===
-function installDependencies() {
-  const r = spawnSync('yarn',
-    ['install','--force','--non-interactive','--network-concurrency','3'],
-    { cwd:'levanter', stdio:'inherit', env:{...process.env,CI:'true'} }
-  );
-  if (r.error||r.status!==0) {
-    console.error('❌ Dependency install failed:', r.error||r.status);
-    process.exit(1);
-  }
-}
 
 function checkDependencies() {
   if (!existsSync(path.resolve('levanter/package.json'))) {
@@ -274,19 +264,6 @@ function checkDependencies() {
   }
   const r = spawnSync('yarn',['check','--verify-tree'],{cwd:'levanter',stdio:'inherit'});
   if (r.status!==0) installDependencies();
-}
-
-function cloneRepository() {
-  const r = spawnSync('git',
-    ['clone','https://github.com/lyfe00011/levanter.git','levanter'],
-    { stdio:'inherit' }
-  );
-  if (r.error) throw new Error(`git clone failed: ${r.error.message}`);
-
-  const cfg = `VPS=true\nSESSION_ID=${SESSION_ID}` +
-    (STATUS_VIEW_EMOJI ? `\nSTATUS_VIEW_EMOJI=${STATUS_VIEW_EMOJI}` : '');
-  writeFileSync('levanter/config.env', cfg);
-  installDependencies();
 }
 
 // === INIT ===
