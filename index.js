@@ -258,8 +258,8 @@ function startPm2() {
 // === Dependency & repo setup ===
 function installDependencies() {
   const r = spawnSync('yarn',
-    ['install', '--production', '--frozen-lockfile', '--network-concurrency', '1'],
-    { cwd:'levanter', stdio:'inherit', env:{...process.env, NODE_OPTIONS: '--max-old-space-size=400'} }
+    ['install','--force','--non-interactive','--network-concurrency','3'],
+    { cwd:'levanter', stdio:'inherit', env:{...process.env,CI:'true'} }
   );
   if (r.error||r.status!==0) {
     console.error('❌ Dependency install failed:', r.error||r.status);
