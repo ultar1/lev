@@ -1,11 +1,12 @@
 {
   "name": "levanter",
-  "version": "5.0.0",
+  "version": "4.1.0",
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
-    "heroku-postbuild": "git clone https://github.com/lyfe00011/levanter.git levanter || true && cd levanter && yarn install --force --non-interactive --network-concurrency 3",
+    "start": "pm2 start . --attach --name levanter",
+    "docker": "pm2-runtime start . --name levanter",
+    "stop": "pm2 stop levanter",
     "postinstall": "node -e \"try { require('sharp') } catch (e) { process.exit(1); }\" || yarn add --ignore-engines sharp@0.33.5"
   },
   "author": "",
@@ -13,8 +14,7 @@
   "dependencies": {
     "audio-decode": "^2.2.2",
     "axios": "^1.3.3",
-    "baileys": "git+https://github.com/WhiskeySockets/Baileys.git",
-    "bgutils-js": "^3.2.0",
+    "baileys": "git+https://lyfe00011-admin@bitbucket.org/lyfe00011/baileys.git",
     "browser-id3-writer": "^4.4.0",
     "cheerio": "^1.0.0-rc.10",
     "cookie": "^0.5.0",
@@ -27,10 +27,8 @@
     "fs-extra": "^11.1.0",
     "google-tts-api": "^2.0.2",
     "googleapis": "^126.0.1",
-    "googlevideo": "^4.0.4",
     "heroku-client": "^3.1.0",
-    "jimp": "^1.6.0",
-    "jsdom": "^27.2.0",
+    "jimp": "^0.16.1",
     "link-preview-js": "^3.0.4",
     "moment": "^2.29.4",
     "node-fetch": "3.2.2",
@@ -42,14 +40,14 @@
     "qrcode-reader": "^1.0.4",
     "qrcode-terminal": "^0.12.0",
     "sequelize": "^6.21.4",
-    "sharp": "^0.33.5",
+    "sharp": "^0.32.6",
     "simple-git": "^3.16.1",
     "sqlite3": "^5.0.11",
     "translate-google-api": "^1.0.4",
-    "youtubei.js": "^16.0.0"
+    "youtubei.js": "^15.1.0"
   },
   "packageManager": "yarn@1.22.22",
   "engines": {
-    "node": ">=20.0.0"
+    "node": "20.x"
   }
 }
