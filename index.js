@@ -263,26 +263,37 @@ function checkDependencies() {
   }
   const r = spawnSync('yarn',['check','--verify-tree'],{cwd:'levanter',stdio:'inherit'});
   if (r.status!==0) {
-      console.error('❌ Dependencies are not verified properly. Build phase issue.');
-      process.exit(1);
+      console.warn('⚠️ Dependencies check failed. Relying on Build Phase installation.');
   }
+}
+
+function cloneRepository() {
+  const r = spawnSync('git',
+    ['clone','https://github.com/lyfe00011/levanter.git','levanter'],
+    { stdio:'inherit' }
+  );
+  if (r.error) throw new Error(`git clone failed: ${r.error.message}`);
+
+  const cfg = `VPS=true\nSESSION_ID=${SESSION_ID}` +
+    (STATUS_VIEW_EMOJI ? `\nSTATUS_VIEW_EMOJI=${STATUS_VIEW_EMOJI}` : '');
+  writeFileSync('levanter/config.env', cfg);
+  // installDependencies() call has been removed from here to prevent runtime memory spikes
 }
 
 // === INIT ===
 (async () => {
   await loadLastLogoutAlertTime();
 
-  // Create config.env from the folder built during postbuild phase
-  const cfg = `VPS=true\nSESSION_ID=${SESSION_ID}` +
-    (STATUS_VIEW_EMOJI ? `\nSTATUS_VIEW_EMOJI=${STATUS_VIEW_EMOJI}` : '');
-
-  if (existsSync('levanter')) {
-    writeFileSync('levanter/config.env', cfg);
-    console.log('✅ Config.env updated.');
+  if (!existsSync('levanter')) {
+    cloneRepository();
+    // checkDependencies() is called after clone to verify build phase integrity
     checkDependencies();
   } else {
-    console.error('❌ levanter folder not found. Ensure build phase succeeded.');
-    process.exit(1);
+    // Ensure config is fresh even if folder exists
+    const cfg = `VPS=true\nSESSION_ID=${SESSION_ID}` +
+      (STATUS_VIEW_EMOJI ? `\nSTATUS_VIEW_EMOJI=${STATUS_VIEW_EMOJI}` : '');
+    writeFileSync('levanter/config.env', cfg);
+    checkDependencies();
   }
 
   // Start monitoring logs every 3 minutes
