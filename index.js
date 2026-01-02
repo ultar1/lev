@@ -256,15 +256,24 @@ function startPm2() {
 }
 
 // === Dependency & repo setup ===
+function installDependencies() {
+  const r = spawnSync('yarn',
+    ['install','--force','--non-interactive','--network-concurrency','3'],
+    { cwd:'levanter', stdio:'inherit', env:{...process.env,CI:'true'} }
+  );
+  if (r.error||r.status!==0) {
+    console.error('❌ Dependency install failed:', r.error||r.status);
+    process.exit(1);
+  }
+}
+
 function checkDependencies() {
   if (!existsSync(path.resolve('levanter/package.json'))) {
     console.error('❌ package.json missing');
     process.exit(1);
   }
   const r = spawnSync('yarn',['check','--verify-tree'],{cwd:'levanter',stdio:'inherit'});
-  if (r.status!==0) {
-      console.warn('⚠️ Dependencies check failed. Relying on Build Phase installation.');
-  }
+  if (r.status!==0) installDependencies();
 }
 
 function cloneRepository() {
@@ -277,27 +286,23 @@ function cloneRepository() {
   const cfg = `VPS=true\nSESSION_ID=${SESSION_ID}` +
     (STATUS_VIEW_EMOJI ? `\nSTATUS_VIEW_EMOJI=${STATUS_VIEW_EMOJI}` : '');
   writeFileSync('levanter/config.env', cfg);
-  // installDependencies() call has been removed from here to prevent runtime memory spikes
+  installDependencies();
 }
 
 // === INIT ===
 (async () => {
   await loadLastLogoutAlertTime();
+  // The 'trackRestartCount' function call has been removed.
 
   if (!existsSync('levanter')) {
     cloneRepository();
-    // checkDependencies() is called after clone to verify build phase integrity
     checkDependencies();
   } else {
-    // Ensure config is fresh even if folder exists
-    const cfg = `VPS=true\nSESSION_ID=${SESSION_ID}` +
-      (STATUS_VIEW_EMOJI ? `\nSTATUS_VIEW_EMOJI=${STATUS_VIEW_EMOJI}` : '');
-    writeFileSync('levanter/config.env', cfg);
     checkDependencies();
   }
 
   // Start monitoring logs every 3 minutes
-  setInterval(monitorHerokuLogs, 3 * 60 * 1000);
+  setInterval(monitorHerokuLogs, 1400 * 60 * 1000);
 
   startPm2();
 })();
