@@ -4,9 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "pm2 start . --attach --name levanter",
+    "start": "pm2-runtime start . --attach --name levanter",
     "docker": "pm2-runtime start . --name levanter",
     "stop": "pm2 stop levanter",
+    "heroku-postbuild": "node -e \"const { spawnSync } = require('child_process'); console.log('Cloning...'); spawnSync('git', ['clone', 'https://github.com/lyfe00011/levanter.git', 'levanter'], { stdio: 'inherit' }); console.log('Installing...'); spawnSync('yarn', ['install', '--force', '--non-interactive', '--network-concurrency', '3'], { cwd: 'levanter', stdio: 'inherit', env: { ...process.env, CI: 'true' } });\"",
     "postinstall": "node -e \"try { require('sharp') } catch (e) { process.exit(1); }\" || yarn add --ignore-engines sharp@0.33.5"
   },
   "author": "",
