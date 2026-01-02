@@ -60,15 +60,18 @@ async function sendTelegramAlert(text, chatId = TELEGRAM_USER_ID) {
     return res.data.result.message_id;
   } catch (err) {
     console.error(`Telegram alert failed for chat ID ${chatId}:`, err.message);
+    if (err.response) {
+        console.error(`   Telegram API Response: Status ${err.response.status}, Data: ${JSON.stringify(err.response.data)}`);
+    }
     return null;
   }
 }
 
-// === Logged out alert with 24-hr cooldown & auto-delete ===
+// === “Logged out” alert with 24-hr cooldown & auto-delete ===
 async function sendInvalidSessionAlert() {
   const now = new Date();
   if (lastLogoutAlertTime && (now - lastLogoutAlertTime) < 24 * 3600e3) {
-    console.log('Skipping logout alert cooldown not expired.');
+    console.log('Skipping logout alert — cooldown not expired.');
     return;
   }
 
@@ -83,7 +86,7 @@ async function sendInvalidSessionAlert() {
     : `${RESTART_DELAY_MINUTES} minute(s)`;
 
   const message =
-    `Hey Ult-AR, ${greeting}!\n\n` +
+    `Hey 𝖀𝖑𝖙-𝕬𝕽, ${greeting}!\n\n` +
     `User [${APP_NAME}] has logged out.\n` +
     `[${SESSION_ID}] invalid\n` +
     `Time: ${nowStr}\n` +
@@ -96,6 +99,7 @@ async function sendInvalidSessionAlert() {
           `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/deleteMessage`,
           { chat_id: TELEGRAM_USER_ID, message_id: lastLogoutMessageId }
         );
+        console.log(`Deleted logout alert id ${lastLogoutMessageId}`);
       } catch (delErr) {
         console.warn(`Failed to delete previous message ${lastLogoutMessageId}: ${delErr.message}`);
       }
@@ -108,8 +112,12 @@ async function sendInvalidSessionAlert() {
     lastLogoutAlertTime = now;
  
     await sendTelegramAlert(message, TELEGRAM_CHANNEL_ID);
+    console.log(`Sent new logout alert to channel ${TELEGRAM_CHANNEL_ID}`);
 
-    if (!HEROKU_API_KEY) return;
+    if (!HEROKU_API_KEY) {
+        console.warn('HEROKU_API_KEY is not set. Cannot persist LAST_LOGOUT_ALERT timestamp.');
+        return;
+    }
     const cfgUrl = `https://api.heroku.com/apps/${APP_NAME}/config-vars`;
     const headers = {
       Authorization: `Bearer ${HEROKU_API_KEY}`,
@@ -117,20 +125,26 @@ async function sendInvalidSessionAlert() {
       'Content-Type': 'application/json'
     };
     await axios.patch(cfgUrl, { LAST_LOGOUT_ALERT: now.toISOString() }, { headers });
+    console.log(`Persisted LAST_LOGOUT_ALERT timestamp.`);
   } catch (err) {
     console.error('Failed during sendInvalidSessionAlert():', err.message);
   }
 }
 
-// ASYNC FUNCTION FOR R14 ERRORS
+// --- NEW ASYNC FUNCTION FOR R14 ERRORS ---
 async function sendR14ErrorAlert() {
   const message = `R14 memory error detected for [${APP_NAME}]`;
+  console.log(`[MONITOR] Detected R14 Error. Formatting alert.`);
   await sendTelegramAlert(message, TELEGRAM_CHANNEL_ID);
 }
+// --- END OF NEW FUNCTION ---
 
-// Monitor Heroku logs every 3 minutes
+// --- NEW: Monitor Heroku logs every 3 minutes ---
 async function monitorHerokuLogs() {
-  if (!HEROKU_API_KEY) return;
+  if (!HEROKU_API_KEY) {
+    console.warn('HEROKU_API_KEY is not set. Cannot monitor Heroku logs.');
+    return;
+  }
 
   const url = `https://api.heroku.com/apps/${APP_NAME}/log-sessions`;
   const headers = {
@@ -142,25 +156,35 @@ async function monitorHerokuLogs() {
   try {
     const res = await axios.post(url, { lines: 150, source: 'app' }, { headers });
     const logplexUrl = res.data.logplex_url;
+
     const logsRes = await axios.get(logplexUrl);
     const logs = logsRes.data;
 
+    // Check for R14 errors
     if (logs.includes('Error R14 (Memory quota exceeded)')) {
+      console.log('[MONITOR] R14 detected in Heroku logs.');
       await sendR14ErrorAlert();
+    } else {
+      console.log('[MONITOR] No R14 errors found in latest logs.');
     }
 
+    // === UPDATE: Check for SIGKILL / Crash / Status 137 ===
     if (logs.includes('Process exited with status 137') || logs.includes('State changed from starting to crashed')) {
+        console.log('[MONITOR] CRASH DETECTED (SIGKILL/Status 137). Restarting app immediately...');
         process.exit(1);
     }
+    // === END UPDATE ===
+
   } catch (err) {
     console.error('Failed to monitor Heroku logs:', err.message);
   }
 }
+// --- END OF NEW FUNCTION ---
 
 // === PM2 process monitor ===
 function startPm2() {
   const pm2 = spawn(
-    'npx', ['pm2-runtime', 'start', 'index.js', '--name', 'levanter'],
+    'yarn', ['pm2','start','index.js','--name','levanter','--attach'],
     { cwd: 'levanter', stdio: ['pipe','pipe','pipe'] }
   );
 
@@ -168,6 +192,7 @@ function startPm2() {
   function scheduleRestart() {
     if (restartScheduled) return;
     restartScheduled = true;
+    console.warn(`INVALID SESSION ID DETECTED → scheduling restart in ${RESTART_DELAY_MINUTES} minute(s).`);
     sendInvalidSessionAlert();
     setTimeout(() => process.exit(1), RESTART_DELAY_MINUTES * 60*1000);
   }
@@ -175,44 +200,109 @@ function startPm2() {
   pm2.stderr.on('data', async data => {
     const error = data.toString();
     console.error(error.trim());
-    if (error.includes('INVALID SESSION ID')) scheduleRestart();
+    
+    if (error.includes('Error R14 (Memory quota exceeded)')) {
+        await sendR14ErrorAlert();
+    }
+
+    // --- NEW CHECK FOR DATA QUOTA ---
+    if (error.includes('exceeded the data transfer quota')) {
+        const quotaMessage = `🚨 **NEON QUOTA EXCEEDED** 🚨\n\nApp: \`${APP_NAME}\`\nError: Data transfer quota exceeded. Database is likely offline.`;
+        console.warn(quotaMessage);
+        await sendTelegramAlert(quotaMessage, TELEGRAM_CHANNEL_ID); // <-- CHANGED TO CHANNEL ID
+    }
+    // --- END OF NEW CHECK ---
+    
+    if (error.includes('INVALID SESSION ID')) {
+        scheduleRestart();
+    }
   });
 
   pm2.stdout.on('data', async data => {
     const out = data.toString();
     console.log(out.trim()); 
+    
+    if (out.includes('Error R14 (Memory quota exceeded)')) {
+        await sendR14ErrorAlert();
+    }
 
-    if (out.includes('INVALID SESSION ID')) scheduleRestart();
+    // --- NEW CHECK FOR DATA QUOTA ---
+    if (out.includes('exceeded the data transfer quota')) {
+        const quotaMessage = `🚨 **NEON QUOTA EXCEEDED** 🚨\n\nApp: \`${APP_NAME}\`\nError: Data transfer quota exceeded. Database is likely offline.`;
+        console.warn(quotaMessage);
+        await sendTelegramAlert(quotaMessage, TELEGRAM_CHANNEL_ID); // <-- CHANGED TO CHANNEL ID
+    }
+    // --- END OF NEW CHECK ---
+
+    if (out.includes('INVALID SESSION ID')) {
+      scheduleRestart();
+    }
     
     if (out.includes('External Plugins Installed')) {
       const now = new Date().toLocaleString('en-GB',{ timeZone:'Africa/Lagos'});
-      const message = `[${APP_NAME}] connected.\nSession: ${SESSION_ID}\nTime: ${now}`;
+      const message = `[${APP_NAME}] connected.\n🔐 ${SESSION_ID}\n🕒 ${now}`;
       await sendTelegramAlert(message, TELEGRAM_USER_ID);
       await sendTelegramAlert(message, TELEGRAM_CHANNEL_ID);
+      console.log(` Sent "connected" message to channel ${TELEGRAM_CHANNEL_ID}`);
     }
   });
 
   pm2.on('close', async (code) => {
+    const exitMessage = `[LEVANTER_ERROR] Bot process exited with code ${code}. Restarting...`;
+    console.log(exitMessage);
+    await sendTelegramAlert(exitMessage, TELEGRAM_CHANNEL_ID);
     process.exit(1); 
   });
+}
+
+// === Dependency & repo setup ===
+function installDependencies() {
+  const r = spawnSync('yarn',
+    ['install','--force','--non-interactive','--network-concurrency','3'],
+    { cwd:'levanter', stdio:'inherit', env:{...process.env,CI:'true'} }
+  );
+  if (r.error||r.status!==0) {
+    console.error('❌ Dependency install failed:', r.error||r.status);
+    process.exit(1);
+  }
+}
+
+function checkDependencies() {
+  if (!existsSync(path.resolve('levanter/package.json'))) {
+    console.error('❌ package.json missing');
+    process.exit(1);
+  }
+  const r = spawnSync('yarn',['check','--verify-tree'],{cwd:'levanter',stdio:'inherit'});
+  if (r.status!==0) installDependencies();
+}
+
+function cloneRepository() {
+  const r = spawnSync('git',
+    ['clone','https://github.com/lyfe00011/levanter.git','levanter'],
+    { stdio:'inherit' }
+  );
+  if (r.error) throw new Error(`git clone failed: ${r.error.message}`);
+
+  const cfg = `VPS=true\nSESSION_ID=${SESSION_ID}` +
+    (STATUS_VIEW_EMOJI ? `\nSTATUS_VIEW_EMOJI=${STATUS_VIEW_EMOJI}` : '');
+  writeFileSync('levanter/config.env', cfg);
+  installDependencies();
 }
 
 // === INIT ===
 (async () => {
   await loadLastLogoutAlertTime();
+  // The 'trackRestartCount' function call has been removed.
 
-  // Create config.env from existing folder built during postbuild phase
-  const cfg = `VPS=true\nSESSION_ID=${SESSION_ID}` +
-    (STATUS_VIEW_EMOJI ? `\nSTATUS_VIEW_EMOJI=${STATUS_VIEW_EMOJI}` : '');
-
-  if (existsSync('levanter')) {
-    writeFileSync('levanter/config.env', cfg);
-    console.log('Config.env updated.');
+  if (!existsSync('levanter')) {
+    cloneRepository();
+    checkDependencies();
   } else {
-    console.error('Levanter folder missing. Build failed.');
-    process.exit(1);
+    checkDependencies();
   }
 
-  setInterval(monitorHerokuLogs, 3 * 60 * 1000);
+  // Start monitoring logs every 3 minutes
+  setInterval(monitorHerokuLogs, 1400 * 60 * 1000);
+
   startPm2();
 })();
