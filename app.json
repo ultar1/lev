@@ -57,10 +57,10 @@
       "required": false,
       "value": "p"
     },
-    "RMBG_KEY": {
-      "description": "API key from remove.bg, required for plugin rmbg",
+    "AUTO_UPDATE": {
+      "description": "no update",
       "required": false,
-      "value": "null"
+      "value": "false"
     },
     "LANGUAGE": {
       "description": "Default language for TTS or TRT",
