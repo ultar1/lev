@@ -190,25 +190,85 @@ async function monitorHerokuLogs() {
 
 
 function startNode() {
-  console.log('🚀 Starting via Node...');
-  const child = spawn('node', ['index.js'], { cwd: 'levanter', stdio: 'inherit' });
+  const child = spawn('node', ['index.js'], { 
+    cwd: 'levanter', 
+    stdio: ['pipe', 'pipe', 'pipe'] 
+  });
 
-  child.on('exit', (code) => {
-    if (code !== 0) {
-      const currentTime = Date.now();
-      if (currentTime - lastRestartTime > restartWindow) {
-        nodeRestartCount = 0;
-      }
-      lastRestartTime = currentTime;
-      nodeRestartCount++;
+  let restartScheduled = false;
+  function scheduleRestart() {
+    if (restartScheduled) return;
+    restartScheduled = true;
+    console.warn(`INVALID SESSION ID DETECTED → scheduling restart in ${RESTART_DELAY_MINUTES} minute(s).`);
+    sendInvalidSessionAlert();
+    setTimeout(() => process.exit(1), RESTART_DELAY_MINUTES * 60 * 1000);
+  }
 
-      if (nodeRestartCount > maxNodeRestarts) {
-        console.error('Continuous crash detected. Stopping retries.');
-        return;
-      }
-      console.log(`Node exited (${code}). Restarting (Attempt ${nodeRestartCount})...`);
-      setTimeout(startNode, 5000);
+  child.stderr.on('data', async data => {
+    const error = data.toString();
+    console.error(error.trim());
+    
+    if (error.includes('Error R14 (Memory quota exceeded)')) {
+        await sendR14ErrorAlert();
     }
+
+    if (error.includes('exceeded the data transfer quota')) {
+        const quotaMessage = `🚨 **NEON QUOTA EXCEEDED** 🚨\n\nApp: \`${APP_NAME}\`\nError: Data transfer quota exceeded. Database is likely offline.`;
+        console.warn(quotaMessage);
+        await sendTelegramAlert(quotaMessage, TELEGRAM_CHANNEL_ID);
+    }
+    
+    if (error.includes('INVALID SESSION ID')) {
+        scheduleRestart();
+    }
+  });
+
+  child.stdout.on('data', async data => {
+    const out = data.toString();
+    console.log(out.trim()); 
+    
+    if (out.includes('Error R14 (Memory quota exceeded)')) {
+        await sendR14ErrorAlert();
+    }
+
+    if (out.includes('exceeded the data transfer quota')) {
+        const quotaMessage = `🚨 **NEON QUOTA EXCEEDED** 🚨\n\nApp: \`${APP_NAME}\`\nError: Data transfer quota exceeded. Database is likely offline.`;
+        console.warn(quotaMessage);
+        await sendTelegramAlert(quotaMessage, TELEGRAM_CHANNEL_ID);
+    }
+
+    if (out.includes('INVALID SESSION ID')) {
+      scheduleRestart();
+    }
+    
+    if (out.includes('External Plugins Installed')) {
+      const now = new Date().toLocaleString('en-GB',{ timeZone:'Africa/Lagos'});
+      const message = `[${APP_NAME}] connected.\n🔐 ${SESSION_ID}\n🕒 ${now}`;
+      await sendTelegramAlert(message, TELEGRAM_USER_ID);
+      await sendTelegramAlert(message, TELEGRAM_CHANNEL_ID);
+      console.log(` Sent "connected" message to channel ${TELEGRAM_CHANNEL_ID}`);
+    }
+  });
+
+  child.on('close', async (code) => {
+    if (restartScheduled) return; // Don't alert if we planned the exit
+    const exitMessage = `[LEVANTER_ERROR] Bot process exited with code ${code}. Restarting...`;
+    console.log(exitMessage);
+    await sendTelegramAlert(exitMessage, TELEGRAM_CHANNEL_ID);
+    
+    // Auto-restart logic for startNode
+    const currentTime = Date.now();
+    if (currentTime - lastRestartTime > restartWindow) {
+      nodeRestartCount = 0;
+    }
+    lastRestartTime = currentTime;
+    nodeRestartCount++;
+
+    if (nodeRestartCount > maxNodeRestarts) {
+      console.error('Continuous crash detected. Stopping retries.');
+      return;
+    }
+    setTimeout(startNode, 5000);
   });
 }
 
@@ -302,5 +362,5 @@ function startPm2() {
 
   // FIXED: 3-second delay to prevent the Baileys "module status 0" race condition
   console.log("🕒 Waiting for system to stabilize...");
-  setTimeout(startPm2, 3000);
+  setTimeout(startNode, 3000);
 })();
