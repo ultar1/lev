@@ -183,27 +183,26 @@ async function monitorHerokuLogs() {
 
 
 function startNode() {
-  const child = spawn('node', ['index.js'], { cwd: 'levanter', stdio: 'inherit' })
+  console.log('🚀 Starting via Node...');
+  const child = spawn('node', ['index.js'], { cwd: 'levanter', stdio: 'inherit' });
 
   child.on('exit', (code) => {
     if (code !== 0) {
-      const currentTime = Date.now()
+      const currentTime = Date.now();
       if (currentTime - lastRestartTime > restartWindow) {
-        nodeRestartCount = 0
+        nodeRestartCount = 0;
       }
-      lastRestartTime = currentTime
-      nodeRestartCount++
+      lastRestartTime = currentTime;
+      nodeRestartCount++;
 
       if (nodeRestartCount > maxNodeRestarts) {
-        console.error('Node.js process is restarting continuously. Stopping retries...')
-        return
+        console.error('Continuous crash detected. Stopping retries.');
+        return;
       }
-      console.log(
-        `Node.js process exited with code ${code}. Restarting... (Attempt ${nodeRestartCount})`
-      )
-      startNode()
+      console.log(`Node exited (${code}). Restarting (Attempt ${nodeRestartCount})...`);
+      setTimeout(startNode, 5000);
     }
-  })
+  });
 }
 
 // === PM2 process monitor ===
@@ -282,25 +281,18 @@ function startPm2() {
 
 
 // === INIT ===
-// === UPDATED INIT ===
 (async () => {
   await loadLastLogoutAlertTime();
 
-  // Check if build actually worked
   if (!existsSync('levanter/package.json')) {
-    console.error('❌ Levanter folder not found! Build script might have failed.');
+    console.error('❌ Levanter folder missing!');
     process.exit(1);
   }
 
-  // Create the config file (fast, low memory)
-  const cfg = `VPS=true\nSESSION_ID=${SESSION_ID}` +
-    (STATUS_VIEW_EMOJI ? `\nSTATUS_VIEW_EMOJI=${STATUS_VIEW_EMOJI}` : '');
+  const cfg = `VPS=true\nSESSION_ID=${SESSION_ID}` + (STATUS_VIEW_EMOJI ? `\nSTATUS_VIEW_EMOJI=${STATUS_VIEW_EMOJI}` : '');
   writeFileSync('levanter/config.env', cfg);
 
-  // Corrected the interval to 3 minutes (3 * 60 * 1000)
   setInterval(monitorHerokuLogs, 180000);
-
-  console.log("⚡ Starting PM2 monitor...");
-  startNode();
+  
+  startNode(); // Starts with Node first as requested
 })();
-
