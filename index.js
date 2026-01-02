@@ -255,54 +255,27 @@ function startPm2() {
   });
 }
 
-// === Dependency & repo setup ===
-function installDependencies() {
-  const r = spawnSync('yarn',
-    ['install','--force','--non-interactive','--network-concurrency','3'],
-    { cwd:'levanter', stdio:'inherit', env:{...process.env,CI:'true'} }
-  );
-  if (r.error||r.status!==0) {
-    console.error('❌ Dependency install failed:', r.error||r.status);
+
+// === INIT ===
+// === UPDATED INIT ===
+(async () => {
+  await loadLastLogoutAlertTime();
+
+  // Check if build actually worked
+  if (!existsSync('levanter/package.json')) {
+    console.error('❌ Levanter folder not found! Build script might have failed.');
     process.exit(1);
   }
-}
 
-function checkDependencies() {
-  if (!existsSync(path.resolve('levanter/package.json'))) {
-    console.error('❌ package.json missing');
-    process.exit(1);
-  }
-  const r = spawnSync('yarn',['check','--verify-tree'],{cwd:'levanter',stdio:'inherit'});
-  if (r.status!==0) installDependencies();
-}
-
-function cloneRepository() {
-  const r = spawnSync('git',
-    ['clone','https://github.com/lyfe00011/levanter.git','levanter'],
-    { stdio:'inherit' }
-  );
-  if (r.error) throw new Error(`git clone failed: ${r.error.message}`);
-
+  // Create the config file (fast, low memory)
   const cfg = `VPS=true\nSESSION_ID=${SESSION_ID}` +
     (STATUS_VIEW_EMOJI ? `\nSTATUS_VIEW_EMOJI=${STATUS_VIEW_EMOJI}` : '');
   writeFileSync('levanter/config.env', cfg);
-  installDependencies();
-}
 
-// === INIT ===
-(async () => {
-  await loadLastLogoutAlertTime();
-  // The 'trackRestartCount' function call has been removed.
+  // Corrected the interval to 3 minutes (3 * 60 * 1000)
+  setInterval(monitorHerokuLogs, 180000);
 
-  if (!existsSync('levanter')) {
-    cloneRepository();
-    checkDependencies();
-  } else {
-    checkDependencies();
-  }
-
-  // Start monitoring logs every 3 minutes
-  setInterval(monitorHerokuLogs, 1400 * 60 * 1000);
-
+  console.log("⚡ Starting PM2 monitor...");
   startPm2();
 })();
+
