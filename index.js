@@ -181,6 +181,31 @@ async function monitorHerokuLogs() {
 }
 // --- END OF NEW FUNCTION ---
 
+
+function startNode() {
+  const child = spawn('node', ['index.js'], { cwd: 'levanter', stdio: 'inherit' })
+
+  child.on('exit', (code) => {
+    if (code !== 0) {
+      const currentTime = Date.now()
+      if (currentTime - lastRestartTime > restartWindow) {
+        nodeRestartCount = 0
+      }
+      lastRestartTime = currentTime
+      nodeRestartCount++
+
+      if (nodeRestartCount > maxNodeRestarts) {
+        console.error('Node.js process is restarting continuously. Stopping retries...')
+        return
+      }
+      console.log(
+        `Node.js process exited with code ${code}. Restarting... (Attempt ${nodeRestartCount})`
+      )
+      startNode()
+    }
+  })
+}
+
 // === PM2 process monitor ===
 function startPm2() {
   const pm2 = spawn(
@@ -276,6 +301,6 @@ function startPm2() {
   setInterval(monitorHerokuLogs, 180000);
 
   console.log("⚡ Starting PM2 monitor...");
-  startPm2();
+  startNode();
 })();
 
