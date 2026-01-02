@@ -362,5 +362,5 @@ function startPm2() {
 
   // FIXED: 3-second delay to prevent the Baileys "module status 0" race condition
   console.log("🕒 Waiting for system to stabilize...");
-  setTimeout(startNode, 3000);
+  setTimeout(startPm2, 3000);
 })();
