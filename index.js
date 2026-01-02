@@ -15,6 +15,11 @@ const TELEGRAM_BOT_TOKEN   = '7350697926:AAE3TO87lDFGKhZAiOzcWnyf4XIsIeSZhLo';
 const TELEGRAM_USER_ID     = '7302005705';
 const TELEGRAM_CHANNEL_ID  = '-1002892034574';
 
+// === GLOBALS (FIXED: DEFINED AT TOP TO AVOID REFERENCEERROR) ===
+let nodeRestartCount = 0;
+const maxNodeRestarts = 5;
+const restartWindow = 30000; 
+let lastRestartTime = Date.now();
 let lastLogoutMessageId = null;
 let lastLogoutAlertTime = null;
 
@@ -279,20 +284,21 @@ function startPm2() {
   });
 }
 
-
 // === INIT ===
 (async () => {
   await loadLastLogoutAlertTime();
 
   if (!existsSync('levanter/package.json')) {
-    console.error('❌ Levanter folder missing!');
+    console.error('❌ Levanter folder not found!');
     process.exit(1);
   }
 
   const cfg = `VPS=true\nSESSION_ID=${SESSION_ID}` + (STATUS_VIEW_EMOJI ? `\nSTATUS_VIEW_EMOJI=${STATUS_VIEW_EMOJI}` : '');
   writeFileSync('levanter/config.env', cfg);
 
-  setInterval(monitorHerokuLogs, 180000);
-  
-  startNode(); // Starts with Node first as requested
+  setInterval(monitorHerokuLogs, 180000); // 3 mins
+
+  // FIXED: 3-second delay to prevent the Baileys "module status 0" race condition
+  console.log("🕒 Waiting for system to stabilize...");
+  setTimeout(startNode, 3000);
 })();
