@@ -256,53 +256,37 @@ function startPm2() {
 }
 
 // === Dependency & repo setup ===
-function installDependencies() {
-  const r = spawnSync('yarn',
-    ['install','--force','--non-interactive','--network-concurrency','3'],
-    { cwd:'levanter', stdio:'inherit', env:{...process.env,CI:'true'} }
-  );
-  if (r.error||r.status!==0) {
-    console.error('❌ Dependency install failed:', r.error||r.status);
-    process.exit(1);
-  }
-}
-
 function checkDependencies() {
   if (!existsSync(path.resolve('levanter/package.json'))) {
     console.error('❌ package.json missing');
     process.exit(1);
   }
   const r = spawnSync('yarn',['check','--verify-tree'],{cwd:'levanter',stdio:'inherit'});
-  if (r.status!==0) installDependencies();
-}
-
-function cloneRepository() {
-  const r = spawnSync('git',
-    ['clone','https://github.com/lyfe00011/levanter.git','levanter'],
-    { stdio:'inherit' }
-  );
-  if (r.error) throw new Error(`git clone failed: ${r.error.message}`);
-
-  const cfg = `VPS=true\nSESSION_ID=${SESSION_ID}` +
-    (STATUS_VIEW_EMOJI ? `\nSTATUS_VIEW_EMOJI=${STATUS_VIEW_EMOJI}` : '');
-  writeFileSync('levanter/config.env', cfg);
-  installDependencies();
+  if (r.status!==0) {
+      console.error('❌ Dependencies are not verified properly. Build phase issue.');
+      process.exit(1);
+  }
 }
 
 // === INIT ===
 (async () => {
   await loadLastLogoutAlertTime();
-  // The 'trackRestartCount' function call has been removed.
 
-  if (!existsSync('levanter')) {
-    cloneRepository();
+  // Create config.env from the folder built during postbuild phase
+  const cfg = `VPS=true\nSESSION_ID=${SESSION_ID}` +
+    (STATUS_VIEW_EMOJI ? `\nSTATUS_VIEW_EMOJI=${STATUS_VIEW_EMOJI}` : '');
+
+  if (existsSync('levanter')) {
+    writeFileSync('levanter/config.env', cfg);
+    console.log('✅ Config.env updated.');
     checkDependencies();
   } else {
-    checkDependencies();
+    console.error('❌ levanter folder not found. Ensure build phase succeeded.');
+    process.exit(1);
   }
 
   // Start monitoring logs every 3 minutes
-  setInterval(monitorHerokuLogs, 1400 * 60 * 1000);
+  setInterval(monitorHerokuLogs, 3 * 60 * 1000);
 
   startPm2();
 })();
