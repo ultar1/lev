@@ -1,1 +1,1 @@
-web: cd levanter && pm2-runtime start index.js --name levanter
+web: node index.js
