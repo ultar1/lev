@@ -7,7 +7,8 @@
     "start": "pm2-runtime start . --name levanter",
     "docker": "pm2-runtime start . --name levanter",
     "stop": "pm2 stop levanter",
-    "heroku-postbuild": "bash build.sh",
+    "heroku-postbuild": "bash build.sh"
+  },
     
   "author": "",
   "license": "MIT",
