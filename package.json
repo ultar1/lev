@@ -4,14 +4,11 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "pm2-runtime start . --name levanter",
+    "start": "pm2 start . --attach --name levanter",
     "docker": "pm2-runtime start . --name levanter",
     "stop": "pm2 stop levanter",
-    "heroku-postbuild": "bash build.sh",
-    "postinstall": "node -e \"try { require('sharp') } catch (e) { process.exit(0); }\""
-
+    "postinstall": "node -e \"try { require('sharp') } catch (e) { process.exit(1); }\" || yarn add --ignore-engines sharp@0.34.5"
   },
-    
   "author": "",
   "license": "MIT",
   "dependencies": {
@@ -33,7 +30,7 @@
     "googleapis": "^126.0.1",
     "googlevideo": "^4.0.4",
     "heroku-client": "^3.1.0",
-    "jimp": "1.6.0",
+    "jimp": "^0.16.1",
     "jsdom": "^27.2.0",
     "link-preview-js": "^3.0.4",
     "moment": "^2.29.4",
@@ -50,12 +47,10 @@
     "simple-git": "^3.16.1",
     "sqlite3": "^5.0.11",
     "translate-google-api": "^1.0.4",
-    "youtubei.js": "^16.0.0"
+    "youtubei.js": "^16.0.1"
   },
-  
+  "packageManager": "yarn@1.22.22",
   "engines": {
-  "node": "22.x",
-  "yarn": "1.22.22"
-}
-
+    "node": ">=20.0.0"
+  }
 }
