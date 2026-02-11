@@ -1,7 +1,7 @@
 git
 libzmq3-dev
 pkg-config
-yarnpkg
+yarn
 libavahi-compat-libdnssd-dev
 
 
