@@ -16,8 +16,5 @@ echo "📂 Cloning Levanter..."
 git clone https://github.com/lyfe00011/levanter.git levanter
 
 # 3. Install dependencies inside the levanter folder
-echo "📦 Installing Levanter dependencies..."
-cd levanter
-npm install --network-concurrency 1 --force
 
 echo "✅ Build complete!"
