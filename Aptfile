@@ -1,4 +1,6 @@
 git
 libzmq3-dev
 pkg-config
+libavahi-compat-libdnssd-dev
+
 
