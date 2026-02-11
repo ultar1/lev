@@ -1,1 +1,4 @@
 git
+libzmq3-dev
+pkg-config
+
