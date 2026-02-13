@@ -138,8 +138,7 @@
   ],
   "buildpacks": [
     {
-      "url": "https://github.com/heroku/heroku-buildpack-nodejs
-"
+      "url": "heroku/nodejs"
     },
     {
       "url": "https://github.com/heroku/heroku-buildpack-apt"
