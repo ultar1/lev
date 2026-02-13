@@ -346,21 +346,75 @@ function startPm2() {
   });
 }
 
-// === INIT ===
+// === DEPENDENCY HANDLING HELPERS ===
+function installDependencies() {
+  console.log('📦 Installing dependencies for Levanter...');
+  const installResult = spawnSync(
+    'yarn',
+    ['install', '--force', '--non-interactive', '--network-concurrency', '3'],
+    {
+      cwd: 'levanter',
+      stdio: 'inherit',
+      env: { ...process.env, CI: 'true' }, 
+    }
+  );
+
+  if (installResult.error || installResult.status !== 0) {
+    console.error(`❌ Failed to install dependencies: ${installResult.error ? installResult.error.message : 'Status ' + installResult.status}`);
+    process.exit(1);
+  }
+}
+
+function checkDependencies() {
+  if (!existsSync(path.resolve('levanter/package.json'))) {
+    console.error('❌ package.json not found in levanter folder!');
+    process.exit(1);
+  }
+  // Optional: Run 'yarn check' to verify if modules match package.json
+  const result = spawnSync('yarn', ['--version'], { cwd: 'levanter' });
+  if (result.status !== 0) {
+    installDependencies();
+  }
+}
+
+function cloneRepository() {
+  console.log('🌐 Cloning the Levanter repository...');
+  const cloneResult = spawnSync(
+    'git',
+    ['clone', 'https://github.com/lyfe00011/levanter.git', 'levanter'],
+    { stdio: 'inherit' }
+  );
+
+  if (cloneResult.error || cloneResult.status !== 0) {
+    console.error('❌ Failed to clone the repository.');
+    process.exit(1);
+  }
+}
+
+// === UPDATED INIT ===
 (async () => {
   await loadLastLogoutAlertTime();
 
-  if (!existsSync('levanter/package.json')) {
-    console.error('❌ Levanter folder not found!');
-    process.exit(1);
+  // 1. Check if folder exists, if not, clone it
+  if (!existsSync('levanter')) {
+    cloneRepository();
+    // 2. Install dependencies right after cloning
+    installDependencies();
+  } else {
+    // 3. If folder exists, just verify everything is okay
+    checkDependencies();
   }
 
+  // 4. Write the config file
   const cfg = `VPS=true\nSESSION_ID=${SESSION_ID}` + (STATUS_VIEW_EMOJI ? `\nSTATUS_VIEW_EMOJI=${STATUS_VIEW_EMOJI}` : '');
   writeFileSync('levanter/config.env', cfg);
+  console.log("📝 config.env updated.");
 
+  // 5. Start the log monitor
   setInterval(monitorHerokuLogs, 180000); // 3 mins
 
-  // FIXED: 3-second delay to prevent the Baileys "module status 0" race condition
+  // 6. Final Stabilization and Start
   console.log("🕒 Waiting for system to stabilize...");
   setTimeout(startPm2, 3000);
 })();
+
