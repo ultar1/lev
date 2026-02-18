@@ -1,15 +1,23 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-# Clone the repository
-git clone https://github.com/your/repo.git
+# Exit on error
+set -e
 
-# Navigate into the levanter folder
-cd levanter
+echo "Starting Postbuild Process..."
 
-# Install dependencies
-npm install
-
-# Properly install dependencies
-if [ -f yarn.lock ]; then
-    yarn install
+# 1. Remove old folder if it exists (for fresh builds)
+if [ -d "levanter" ]; then
+    echo "Cleaning up old levanter directory..."
+    rm -rf levanter
 fi
+
+# 2. Clone the repository
+echo "Cloning Levanter..."
+git clone https://github.com/lyfe00011/levanter.git levanter
+
+# 3. Install dependencies inside the levanter folder
+echo "Installing Levanter dependencies..."
+cd levanter
+npm install --network-concurrency 1 --force
+
+echo "Build complete!"
