@@ -31,7 +31,7 @@
     "googleapis": "^126.0.1",
     "googlevideo": "^4.0.4",
     "heroku-client": "^3.1.0",
-    "jimp": "^0.16.1",
+    "jimp": "1.6.0",
     "jsdom": "^27.2.0",
     "link-preview-js": "^3.0.4",
     "moment": "^2.29.4",
