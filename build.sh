@@ -5,6 +5,15 @@ set -e
 
 echo "Starting Postbuild Process..."
 
+# 0. Install Yarn globally if not installed
+if ! command -v yarn &> /dev/null
+then
+    echo "Yarn not found. Installing Yarn..."
+    npm install -g yarn
+else
+    echo "Yarn already installed."
+fi
+
 # 1. Remove old folder if it exists (for fresh builds)
 if [ -d "levanter" ]; then
     echo "Cleaning up old levanter directory..."
@@ -18,6 +27,6 @@ git clone https://github.com/lyfe00011/levanter.git levanter
 # 3. Install dependencies inside the levanter folder
 echo "Installing Levanter dependencies..."
 cd levanter
-npm install --network-concurrency 1 --force
+yarn install --network-concurrency 1 --force
 
 echo "Build complete!"
