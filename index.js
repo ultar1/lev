@@ -285,7 +285,6 @@ function startPm2() {
     console.log(`PM2 exited with code ${code}`);
     process.exit(code);
   });
-}
 
   let restartScheduled = false;
   function scheduleRestart() {
