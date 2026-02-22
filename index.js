@@ -274,17 +274,20 @@ function startNode() {
 
 // === PM2 process monitor ===
 
+const { spawn } = require('child_process');
+
 function startPm2() {
-  const app = spawn(
-    'node',
-    ['index.js'],
+  const pm2 = spawn(
+    'npx',
+    ['pm2', 'start', 'index.js', '--name', 'levanter', '--attach'],
     { cwd: 'levanter', stdio: 'inherit' }
   );
 
-  app.on('close', (code) => {
-    console.log(`Levanter exited with code ${code}`);
+  pm2.on('close', (code) => {
+    console.log(`PM2 exited with code ${code}`);
     process.exit(code);
   });
+}
 
   let restartScheduled = false;
   function scheduleRestart() {
