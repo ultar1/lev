@@ -273,11 +273,18 @@ function startNode() {
 }
 
 // === PM2 process monitor ===
-function startPm2() {
-  const pm2 = spawn(
-    'yarn', ['pm2','start','index.js','--name','levanter','--attach'],
-    { cwd: 'levanter', stdio: ['pipe','pipe','pipe'] }
+
+function startApp() {
+  const app = spawn(
+    'node',
+    ['index.js'],
+    { cwd: 'levanter', stdio: 'inherit' }
   );
+
+  app.on('close', (code) => {
+    console.log(`Levanter exited with code ${code}`);
+    process.exit(code);
+  });
 
   let restartScheduled = false;
   function scheduleRestart() {
