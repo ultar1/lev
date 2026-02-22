@@ -274,7 +274,7 @@ function startNode() {
 
 // === PM2 process monitor ===
 
-function startApp() {
+function startPm2() {
   const app = spawn(
     'node',
     ['index.js'],
