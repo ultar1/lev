@@ -274,8 +274,6 @@ function startNode() {
 
 // === PM2 process monitor ===
 
-const { spawn } = require('child_process');
-
 function startPm2() {
   const pm2 = spawn(
     'npx',
