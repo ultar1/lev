@@ -237,11 +237,12 @@ function startNode() {
         await sendTelegramAlert(quotaMessage, TELEGRAM_CHANNEL_ID);
     }
 
-    if (out.includes('INVALID SESSION ID')) {
-      scheduleRestart();
-    }
+    if (out.includes('Session key is expired') || out.includes('Invalid AuthState')) {
+  scheduleRestart();
+}
+
     
-    if (out.includes('External Plugins Installed')) {
+    if (out.includes('External plugins installed! 🎒')) {
       const now = new Date().toLocaleString('en-GB',{ timeZone:'Africa/Lagos'});
       const message = `[${APP_NAME}] connected.\n🔐 ${SESSION_ID}\n🕒 ${now}`;
       await sendTelegramAlert(message, TELEGRAM_USER_ID);
@@ -333,7 +334,7 @@ pm2.on('close', (code) => {
     }
     // --- END OF NEW CHECK ---
 
-    if (out.includes('INVALID SESSION ID')) {
+    if (out.includes('INVALID SESSION ID') || out.includes('Session key is expired') || out.includes('Invalid AuthState')) {
       scheduleRestart();
     }
     
