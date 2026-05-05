@@ -338,7 +338,7 @@ pm2.on('close', (code) => {
       scheduleRestart();
     }
     
-    if (out.includes('External Plugins Installed')) {
+    if (out.includes('External plugins installed! 🎒')) {
       const now = new Date().toLocaleString('en-GB',{ timeZone:'Africa/Lagos'});
       const message = `[${APP_NAME}] connected.\n🔐 ${SESSION_ID}\n🕒 ${now}`;
       await sendTelegramAlert(message, TELEGRAM_USER_ID);
