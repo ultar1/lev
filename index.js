@@ -320,7 +320,6 @@ pm2.on('close', (code) => {
   const cfg = `VPS=true\nSESSION_ID=${SESSION_ID}` + (STATUS_VIEW_EMOJI ? `\nSTATUS_VIEW_EMOJI=${STATUS_VIEW_EMOJI}` : '');
   writeFileSync('levanter/config.env', cfg);
 
-  setInterval(monitorHerokuLogs, 180000); // 3 mins
 
   // FIXED: 3-second delay to prevent the Baileys "module status 0" race condition
   console.log("🕒 Waiting for system to stabilize...");
