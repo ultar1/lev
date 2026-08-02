@@ -138,54 +138,7 @@ async function sendInvalidSessionAlert() {
   }
 }
 
-// --- NEW ASYNC FUNCTION FOR R14 ERRORS ---
-async function sendR14ErrorAlert() {
-  const message = `R14 memory error detected for [${APP_NAME}]`;
-  console.log(`[MONITOR] Detected R14 Error. Formatting alert.`);
-  await sendTelegramAlert(message, TELEGRAM_CHANNEL_ID);
-}
-// --- END OF NEW FUNCTION ---
 
-// --- NEW: Monitor Heroku logs every 3 minutes ---
-async function monitorHerokuLogs() {
-  if (!HEROKU_API_KEY) {
-    console.warn('HEROKU_API_KEY is not set. Cannot monitor Heroku logs.');
-    return;
-  }
-
-  const url = `https://api.heroku.com/apps/${APP_NAME}/log-sessions`;
-  const headers = {
-    Authorization: `Bearer ${HEROKU_API_KEY}`,
-    Accept: 'application/vnd.heroku+json; version=3',
-    'Content-Type': 'application/json'
-  };
-
-  try {
-    const res = await axios.post(url, { lines: 150, source: 'app' }, { headers });
-    const logplexUrl = res.data.logplex_url;
-
-    const logsRes = await axios.get(logplexUrl);
-    const logs = logsRes.data;
-
-    // Check for R14 errors
-    if (logs.includes('Error R14 (Memory quota exceeded)')) {
-      console.log('[MONITOR] R14 detected in Heroku logs.');
-      await sendR14ErrorAlert();
-    } else {
-      console.log('[MONITOR] No R14 errors found in latest logs.');
-    }
-
-    // === UPDATE: Check for SIGKILL / Crash / Status 137 ===
-    if (logs.includes('Process exited with status 137') || logs.includes('State changed from starting to crashed')) {
-        console.log('[MONITOR] CRASH DETECTED (SIGKILL/Status 137). Restarting app immediately...');
-        process.exit(1);
-    }
-    // === END UPDATE ===
-
-  } catch (err) {
-    console.error('Failed to monitor Heroku logs:', err.message);
-  }
-}
 // --- END OF NEW FUNCTION ---
 
 
@@ -360,7 +313,7 @@ pm2.on('close', (code) => {
   await loadLastLogoutAlertTime();
 
   if (!existsSync('levanter/package.json')) {
-    console.error('❌ Levanter folder not found!');
+    console.error('Levanter folder not found!');
     process.exit(1);
   }
 
